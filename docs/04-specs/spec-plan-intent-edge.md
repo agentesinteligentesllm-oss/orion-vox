@@ -80,10 +80,15 @@ Authorization: Bearer <SUPABASE_AUTH_JWT>
 interface PlanIntentRequest {
   user_prompt: string;       // transcripción de voz, en español
   client_version: string;    // ej: '0.3.1'
-  conversation_id?: string;  // UUID estable por sesión de voz, para correlación en audit
   hints?: string;            // hints semánticos del usuario, opcional (M1: enviado por cliente; M2 puede moverse a server)
+  // conversation_id: postergado a M2 — multi-turn conversation tracking fuera de alcance M1.
+  // Ver §7 y §3.2 nota M1.
 }
 ```
+
+**Nota M1 (fuera de alcance)**: multi-turn conversation tracking (`conversation_id`)
+postergado a M2 cuando se diseñe el flujo conversacional. En M1 el cliente
+concatena el contexto en `user_prompt` si quiere hilar turnos.
 
 ### 3.3 Response — éxito (200), variante Plan
 
@@ -171,7 +176,7 @@ interface PlanIntentResponseError {
      - Hints opcionales del request
 6. Llamar Gemini API con function calling:
      - tools: [execute_plan(PlanJSON schema), request_clarification(question)]
-     - tool_config: { mode: 'ANY' }  // forzar a invocar una tool
+     - tool_config: { mode: 'ANY', allowed_function_names: ['execute_plan', 'request_clarification'] }
      - Reintentos: 3 con backoff exponencial (500ms, 1s, 2s) sólo
        para 429 / 5xx / timeouts
      - Timeout total 8s
@@ -185,18 +190,25 @@ interface PlanIntentResponseError {
      {
        ts: now,
        user_prompt,
-       plan_json: plan | { kind: 'clarification', question },
+       plan_json: plan | { operation: 'clarification' },
+         // clarification: placeholder que satisface columna NOT NULL;
+         // el detalle de la pregunta va en result_summary
+       result_summary: kind='clarification' → { type: 'clarification', question }
+                       kind='plan'          → NULL  (execute-plan lo actualiza post-ejecución)
        schema_hash,
        client_version,
-       conversation_id,
        was_confirmed: false,    // plan-intent NO confirma
        was_dry_run: true,       // plan-intent NO ejecuta
        sql_executed: NULL,
        sql_params: NULL,
-       error: NULL | 'clarification' | <motivo>,
-       source: 'plan-intent'
+       error: NULL,             // 'clarification' NO es error — trazabilidad en result_summary
      }
    → si INSERT falla: 500 audit_insert_failed (NO devolver plan)
+
+   **LIMIT default — defensa en 3 capas (intencional, no redundancia accidental):**
+   1. El system prompt instruye a Gemini "incluí `limit: 100` si no se especifica".
+   2. El schema Zod tiene `.default(100)` → si Gemini lo omite, Zod lo inyecta al parsear.
+   3. `execute-plan` re-valida `plan.limit > 0 && plan.limit <= 1000` — defensa final server.
 10. Return 200 con kind='plan' o kind='clarification'
 ```
 
@@ -212,7 +224,8 @@ En esos casos invoca `request_clarification(question: string)`. La PWA
 recibe `kind: 'clarification'`, lo emite por TTS y vuelve a llamar
 `plan-intent` con el prompt enriquecido. Cada vuelta es una nueva
 request a `plan-intent` (no hay state server-side; el cliente
-concatena el contexto en `user_prompt` o usa `conversation_id`).
+concatena el contexto en `user_prompt`). `conversation_id` es
+feature M2 — ver §3.2 nota M1.
 
 ### 4.3 Allowlist de tablas
 
@@ -313,7 +326,10 @@ con qué frecuencia Gemini falla y por qué.
   cortos, no chat largo).
 - **Sin memoria conversacional server-side**. Cada request es
   autónoma. La PWA puede mandar contexto en `user_prompt` si quiere
-  hilar (M2 podría agregar `conversation_id` con state real).
+  hilar.
+- **Sin conversation_id / multi-turn conversation tracking**. Postergado
+  a M2 cuando se diseñe el flujo conversacional (requiere schema,
+  ADR y diseño de state). Ver §3.2 nota M1.
 - **Cache de schema-summary in-memory por instancia**. No hay caché
   distribuida. Aceptable: la mayoría de calls comparten instancia
   caliente.

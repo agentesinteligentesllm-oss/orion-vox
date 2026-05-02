@@ -82,8 +82,11 @@ interface ExecutePlanRequest {
   plan: PlanJSON;            // ver spec-plan-json-schema.md
   user_prompt: string;       // frase original del usuario (para audit)
   client_version: string;    // ej: '0.3.1'
-  schema_hash?: string;      // sha256 del schema-summary que vio Gemini
-  dry_run?: boolean;         // override del plan.dry_run
+  schema_hash: string;       // sha256 del schema-summary que vio Gemini (requerido)
+                             // 409 schema_stale si no coincide con hash actual
+  dry_run?: boolean;         // override del plan; gana sobre plan.dry_run si ambos presentes
+  was_confirmed?: boolean;   // true si el usuario confirmó en modal táctil (solo writes);
+                             // false o ausente para reads (default: false)
   rejected_by_user?: boolean; // true cuando se llama solo para auditar
                               // una cancelación del modal
 }
@@ -91,12 +94,12 @@ interface ExecutePlanRequest {
 
 **Notas.**
 
-- `rejected_by_user: true` implica `dry_run: true` y `error:
-  'rejected_by_user'` en el audit. La Edge no ejecuta nada en este
-  caso, solo registra la intención auditada.
-- Si `plan.dry_run` o `request.dry_run` es `true`, no se ejecuta
-  contra Postgres; se registra audit con `was_dry_run: true` y
-  `rows_affected: null`.
+- `rejected_by_user: true`: la Edge inserta en `orion_audit` con
+  `error: 'rejected_by_user'` directamente en el INSERT y retorna 200
+  de inmediato. No ejecuta SQL ni hace UPDATE posterior.
+- `dry_run_final = request.dry_run ?? plan.dry_run ?? false`. El
+  request body tiene precedencia sobre el plan. Si ambos están
+  presentes, `request.dry_run` gana.
 
 ### 3.3 Response — éxito (200)
 
@@ -120,6 +123,7 @@ interface ExecutePlanResponse200 {
 | 403  | `forbidden_user`           | `user.id != ORION_ALLOWED_USER_ID`.                           |
 | 400  | `invalid_plan`             | Plan no parseable o tipo incorrecto. `details: string[]`.     |
 | 422  | `validation_failed`        | Validación Zod / `validatePlan` falló. `details: string[]`.   |
+| 409  | `schema_stale`             | `schema_hash` del request no coincide con hash actual de schema-summary; cliente debe re-llamar `plan-intent`. |
 | 403  | `table_not_allowed`        | `plan.table` o un join a una tabla no listada en `ORION_ALLOWED_TABLES`. `details.table`. |
 | 403  | `operation_blocked`        | DDL, multi-statement, denylist. `details.operation`.          |
 | 403  | `missing_filters`          | `update` o `delete` sin filtros.                              |
@@ -169,20 +173,35 @@ interface ExecutePlanResponseError {
      - Para cada j de plan.joins ?? []: si j.table no en allowed
        → 403 table_not_allowed con { table: j.table }
      - (igualmente intentar auditar el rechazo en paso 7)
+5b. Verificar schema_hash:
+     - current_hash = obtener hash de schema-summary (llamada interna, mismo cache TTL)
+     - Si body.schema_hash != current_hash → 409 schema_stale
+       (el schema cambió entre cuando Gemini generó el plan y ahora;
+       el cliente debe re-llamar plan-intent para obtener un plan fresco)
 6. Aplicar reglas hardcoded de bloqueo (DDL, multi-stmt, denylist)
    → si bloquea, 403 (igualmente intentar auditar)
 7. INSERT pre-ejecución en orion_audit:
-     { ts: now, user_id, user_prompt, plan_json, schema_hash,
-       client_version, was_confirmed (inferido), was_dry_run,
-       sql_executed, sql_params, error: NULL/<motivo si rechazo>,
-       source: 'execute-plan' }
+     { ts: now,
+       user_prompt, plan_json, schema_hash, client_version,
+       was_confirmed: body.was_confirmed ?? false,
+       was_dry_run: (body.dry_run ?? plan.dry_run ?? false) || (body.rejected_by_user ?? false),
+       sql_executed: NULL, sql_params: NULL,
+       error: body.rejected_by_user ? 'rejected_by_user' : NULL }
    → si INSERT falla, 500 audit_insert_failed (NO continuar)
-8. Si rejected_by_user=true OR dry_run=true:
-     → UPDATE audit con error/result según corresponda
-     → return 200 con { rows_affected: 0, sql_preview, ... }
+8. Si rejected_by_user=true:
+     → el error ya está en el INSERT; retornar 200 de inmediato
+     → return 200 con { ok: true, rows_affected: 0, audit_id, sql_preview: null, duration_ms }
+     (NO continuar al paso 9 — no ejecutar SQL)
+   Si dry_run=true:
+     → continuar a paso 10 para construir SQL (NO ejecutar en paso 11)
+     → ver paso 11b
 9. Forzar statement_timeout 10s en la sesión:
      SET LOCAL statement_timeout = '10s'
 10. Construir SQL parametrizado vía query builder
+11b. Si dry_run=true (solo llega aquí si NO es rejected_by_user):
+     → UPDATE audit con result_summary: { dry_run: true, sql_preview }
+     → return 200 con { ok: true, rows_affected: 0, audit_id, sql_preview, duration_ms }
+     (NO continuar al paso 11)
 11. Ejecutar query contra Postgres con cliente que usa
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') (M1) o credenciales del
     rol orion_vox_executor (M2)
@@ -199,9 +218,12 @@ interface ExecutePlanResponseError {
 
 ### 4.2 Comportamiento de `dry_run`
 
-- `dry_run: true` salta el paso 9-10 (no ejecuta) y registra audit con
-  `was_dry_run: true`, `rows_affected: null`, `error: null`,
-  `result_summary: { dry_run: true, sql_preview }`.
+- `dry_run_final = request.dry_run ?? plan.dry_run ?? false`. El
+  request body tiene precedencia sobre el plan.
+- Si `dry_run_final = true`: se ejecuta el query builder (paso 10)
+  para generar el SQL preview, pero se salta la ejecución contra
+  Postgres (paso 11). El audit se actualiza con `was_dry_run: true`,
+  `rows_affected: null`, `result_summary: { dry_run: true, sql_preview }`.
 - Usado por la PWA en M1 para previsualizar SQL antes de confirmar
   (alternativa al modal puro client-side).
 
@@ -210,18 +232,19 @@ interface ExecutePlanResponseError {
 - Origen: el modal de confirmación de la PWA. Cuando el usuario tap
   "Cancelar", la PWA llama a este endpoint con
   `rejected_by_user: true` para auditar la intención.
-- La Edge audita con:
+- La Edge hace **INSERT directo** en `orion_audit` con:
   - `was_confirmed: false`
   - `was_dry_run: true`
   - `error: 'rejected_by_user'`
-- No se ejecuta SQL.
-- Retorna 200 con `rows_affected: 0`.
+- Retorna 200 con `rows_affected: 0` **inmediatamente** tras el INSERT.
+  No se construye SQL, no se ejecuta nada en Postgres, no hay UPDATE
+  posterior.
 - Decisión sustantiva (origen Track A): cancelaciones se auditan para
   preservar la traza completa de intenciones, no sólo de ejecuciones.
 
 ### 4.4 Regla "sin audit, no hay ejecución"
 
-Si el INSERT a `orion_audit` falla (paso 6), la Edge:
+Si el INSERT a `orion_audit` falla (paso 7), la Edge:
 
 1. **Aborta**. NO ejecuta ningún SQL contra las tablas del usuario.
 2. Retorna 500 con `error: 'audit_insert_failed'`.
@@ -263,7 +286,11 @@ PlanJSON update:
   regex.
 - Valores siempre como `$1, $2, ...` parametrizados.
 - `LIMIT` en select: si no viene, default 100; si > 1000, rechazo en
-  validador (ya bloqueado).
+  validador (ya bloqueado por Zod). **LIMIT default — defensa en 3
+  capas (intencional)**: (1) el system prompt instruye a Gemini, (2)
+  Zod `.default(100)` lo inyecta si Gemini lo omite, (3) el query
+  builder re-valida el rango final. Las 3 capas son independientes y
+  se refuerzan mutuamente.
 - `JOIN`: solo `INNER JOIN`, máximo 1.
 
 ### 4.6 Operaciones bloqueadas hardcoded

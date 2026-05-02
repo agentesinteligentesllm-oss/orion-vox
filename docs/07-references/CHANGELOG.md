@@ -28,6 +28,7 @@ cambio de contenido (esos cambios viven en el historial de commits).
 ## [Unreleased]
 
 ### Added
+- `tests/smoke/border.test.ts` — guard ADR-013: `$shared/*` solo permite `plan-schema`; cualquier otro path falla.
 - `docs/03-adr/ADR-013-shared-plan-schema-strategy.md` — estrategia de validador compartido entre PWA y Deno sin monorepo.
 - `supabase/functions/_shared/plan-schema.ts` — schema Zod 4 canónico (ops SQL, NULL discriminated union, patrones de identificador).
 - `supabase/migrations/001_orion_audit.sql` — DDL canónico de `orion_audit`, 14 columnas, 3 índices.
@@ -37,7 +38,17 @@ cambio de contenido (esos cambios viven en el historial de commits).
 - Fixtures válidos 09/10/11 — cobertura completa de los 12 ops del spec (`!=`, `<`, `>`, `<=`, `>=`, `like`, `not_in`, `is_null`, `is_not_null`).
 - `tests/fixtures/plans/invalid/01-multi-statement-in-value.json` (renombrado de `01-sql-injection-in-value.json`).
 
-### Fixed
+### Fixed (B1.partial — specs reconciliados)
+- `spec-plan-intent-edge.md`: `conversation_id` removido de M1; `allowed_function_names`
+  en tool_config; INSERT siempre `error: NULL` (clarification en `result_summary`);
+  placeholder `{ operation: 'clarification' }` para columna `plan_json NOT NULL`.
+- `spec-execute-plan-edge.md`: `schema_hash` requerido (sin `?`); nuevo error 409
+  `schema_stale`; `was_confirmed` enviado explícito por cliente; `dry_run` del request
+  gana sobre plan (`request.dry_run ?? plan.dry_run ?? false`); `rejected_by_user`
+  INSERT directo con `error` sin UPDATE posterior; paso 11b para SQL preview en dry_run;
+  LIMIT en 3 capas documentado; `schema_stale` en pipeline §4.1 paso 5b.
+
+### Fixed (B1.partial — schema alineado)
 - `_shared/plan-schema.ts`: alineado con PLAN-JSON-CONTRACT.md §5.
   Ops de filtro corregidos a SQL (`=`, `!=`, `<`, etc.) en lugar de
   nombrados (`eq`, `neq`). NULL ops como discriminated union sin `value`.
