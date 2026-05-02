@@ -32,6 +32,7 @@ cambio de contenido (esos cambios viven en el historial de commits).
 - `docs/03-adr/ADR-013-shared-plan-schema-strategy.md` — estrategia de validador compartido entre PWA y Deno sin monorepo.
 - `supabase/functions/_shared/plan-schema.ts` — schema Zod 4 canónico (ops SQL, NULL discriminated union, patrones de identificador).
 - `supabase/migrations/001_orion_audit.sql` — DDL canónico de `orion_audit`, 14 columnas, 3 índices.
+- `supabase/migrations/002_orion_audit_add_source_nullable_plan.sql` — columna `source` NOT NULL (plan-intent | execute-plan) + `plan_json` nullable para clarifications y errores pre-parse.
 - `tests/contracts/plan-schema.test.ts` — validación Vitest de todos los fixtures contra `PlanSchema` con assert 12/12 ops.
 - `supabase/functions/tests/plan-schema_test.ts` — parity test Deno nativo, mismos fixtures y misma cobertura.
 - `tests/contracts/import-guard.test.ts` — guard que impide imports directos de `supabase/functions/` desde `src/`.
@@ -47,6 +48,20 @@ cambio de contenido (esos cambios viven en el historial de commits).
   gana sobre plan (`request.dry_run ?? plan.dry_run ?? false`); `rejected_by_user`
   INSERT directo con `error` sin UPDATE posterior; paso 11b para SQL preview en dry_run;
   LIMIT en 3 capas documentado; `schema_stale` en pipeline §4.1 paso 5b.
+
+### Fixed (B1.partial — migration 002: source + plan_json nullable)
+- `AUDIT-MODEL.md`: DDL actualizado a 15 columnas; `idx_audit_source` (source, ts desc) agregado;
+  `idx_audit_op` con `WHERE plan_json IS NOT NULL`; §3 reescrito con 3 combinaciones canónicas
+  (plan-intent clarification, plan-intent plan, execute-plan).
+- `spec-audit-table.md`: DDL, índices, constraints e INSERT alineados con migration 002;
+  `source` en INSERT, `plan_json` nullable documentada con razonamiento.
+- `spec-plan-intent-edge.md` §4.1 paso 9: `source: 'plan-intent'`; `plan_json: NULL` para
+  clarification (reemplaza placeholder `{ operation: 'clarification' }` que violaba Zod schema).
+- `spec-execute-plan-edge.md` §4.1 paso 7: `source: 'execute-plan'` en INSERT pre-ejecución.
+- `SETUP-SUPABASE.md` §4 y `ADR-008`: DDL actualizados a 15 columnas; referencia a migrations.
+- Causa: divergencias detectadas durante reconciliación de specs (pre-T1.4). `source` necesario
+  para distinguir entries de plan-intent de execute-plan. `plan_json` nullable requerido porque
+  `{ operation: 'clarification' }` no pertenece al discriminatedUnion del Zod schema.
 
 ### Fixed (B1.partial — schema alineado)
 - `_shared/plan-schema.ts`: alineado con PLAN-JSON-CONTRACT.md §5.

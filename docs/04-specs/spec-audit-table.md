@@ -52,16 +52,25 @@ auditoría server-side (regla constitucional 3 + AUDIT-MODEL §8).
 -- Pre-requisito: extensión pgcrypto para gen_random_uuid()
 create extension if not exists "pgcrypto";
 
+-- DDL base: ver migration 001_orion_audit.sql
+-- Columnas source + plan_json nullable: ver migration 002_orion_audit_add_source_nullable_plan.sql
+
 create table if not exists public.orion_audit (
   -- Identidad y tiempo
   id              uuid primary key default gen_random_uuid(),
   ts              timestamptz not null default now(),
 
+  -- Origen del registro
+  source          text not null
+    check (source in ('plan-intent', 'execute-plan')),
+
   -- Origen del usuario
   user_prompt     text not null,
 
-  -- Plan ejecutado
-  plan_json       jsonb not null,
+  -- Plan que se intentó ejecutar
+  plan_json       jsonb,
+    -- nullable: NULL cuando source='plan-intent' y outcome=clarification,
+    -- o cuando hubo error antes de parsear el plan
 
   -- SQL realmente generado (parametrizado, sin valores)
   sql_executed    text,
@@ -83,11 +92,13 @@ create table if not exists public.orion_audit (
 );
 
 comment on table public.orion_audit is
-  'Auditoría server-side de toda ejecución pasada por execute-plan. Append-only por convención M1; revoke de UPDATE/DELETE en M2.';
+  'Auditoría server-side de toda ejecución pasada por plan-intent y execute-plan. Append-only por convención M1; revoke de UPDATE/DELETE en M2.';
+comment on column public.orion_audit.source is
+  'Edge Function que creó el registro: plan-intent (planning) o execute-plan (execution)';
 comment on column public.orion_audit.user_prompt is
   'Frase original transcripta del usuario.';
 comment on column public.orion_audit.plan_json is
-  'Plan JSON tal como llegó a la Edge.';
+  'Plan JSON validado. NULL cuando source=plan-intent y outcome=clarification, o error pre-parse.';
 comment on column public.orion_audit.sql_executed is
   'SQL parametrizado ejecutado. Valores van en sql_params.';
 comment on column public.orion_audit.error is
@@ -105,14 +116,19 @@ comment on column public.orion_audit.was_confirmed is
 create index if not exists idx_audit_ts
   on public.orion_audit (ts desc);
 
+-- Por source y tiempo (operacional: filtrar por Edge Function)
+create index if not exists idx_audit_source
+  on public.orion_audit (source, ts desc);
+
 -- Solo errores (parcial, ahorra espacio)
 create index if not exists idx_audit_error
   on public.orion_audit (ts desc)
   where error is not null;
 
--- Por operación (extraído de jsonb)
+-- Por operación (extraído de jsonb, solo registros con plan)
 create index if not exists idx_audit_op
-  on public.orion_audit ((plan_json->>'operation'));
+  on public.orion_audit ((plan_json->>'operation'))
+  where plan_json is not null;
 
 -- Por hash de schema (detectar drift)
 create index if not exists idx_audit_schema_hash
@@ -126,8 +142,9 @@ create index if not exists idx_audit_schema_hash
 |-------------------------------------|------------------------------------------------------|
 | `id PRIMARY KEY`                    | UUID único por registro.                              |
 | `ts NOT NULL DEFAULT now()`         | Todo registro tiene tiempo.                          |
+| `source NOT NULL CHECK (...)`       | Distingue plan-intent de execute-plan; valor siempre conocido. |
 | `user_prompt NOT NULL`              | Aún rechazos tienen el prompt original (puede ser ''). |
-| `plan_json NOT NULL`                | Aún rechazos tienen el plan que se intentó.          |
+| `plan_json` nullable                | NULL para clarifications y errores pre-validación (migration 002). |
 | `was_dry_run NOT NULL DEFAULT false` | Bool tri-estado prohibido.                          |
 | `was_confirmed NOT NULL DEFAULT false` | idem.                                              |
 
@@ -195,10 +212,10 @@ particionado por `range(ts)` mensual.
 
 ```sql
 insert into orion_audit
-  (user_prompt, plan_json, sql_executed, sql_params, schema_hash,
+  (source, user_prompt, plan_json, sql_executed, sql_params, schema_hash,
    client_version, was_confirmed, was_dry_run, error)
 values
-  ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 returning id;
 ```
 
@@ -274,11 +291,13 @@ M2 lo refuerza con permisos.
       `pgcrypto` instalada.
 - [ ] Los 4 índices del §3.2 existen y son usados (verificable con
       `EXPLAIN` para queries típicas).
-- [ ] `INSERT` con campos mínimos requeridos (`user_prompt`,
-      `plan_json`) funciona y autopopulates `id`, `ts`, `was_dry_run`,
-      `was_confirmed`.
-- [ ] `INSERT` sin `user_prompt` o sin `plan_json` falla por
-      `NOT NULL`.
+- [ ] `INSERT` con campos mínimos requeridos (`source`, `user_prompt`)
+      funciona y autopopulates `id`, `ts`, `was_dry_run`, `was_confirmed`.
+      `plan_json` puede ser NULL (nullable desde migration 002).
+- [ ] `INSERT` sin `user_prompt` falla por `NOT NULL`.
+- [ ] `INSERT` sin `source` falla por `NOT NULL`.
+- [ ] `INSERT` con `source` fuera de `('plan-intent','execute-plan')` falla
+      por CHECK constraint.
 - [ ] `select count(*) from orion_audit` no incluye datos de tablas
       del usuario.
 - [ ] `comment on table` y `comment on column` están aplicados

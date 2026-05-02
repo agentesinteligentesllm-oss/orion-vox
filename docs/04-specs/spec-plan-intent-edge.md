@@ -188,11 +188,11 @@ interface PlanIntentResponseError {
      → si falla: 422 invalid_plan_from_llm con details[]
 9. INSERT en orion_audit:
      {
+       source: 'plan-intent',
        ts: now,
        user_prompt,
-       plan_json: plan | { operation: 'clarification' },
-         // clarification: placeholder que satisface columna NOT NULL;
-         // el detalle de la pregunta va en result_summary
+       plan_json: kind='plan'          → <plan validado>
+                  kind='clarification' → NULL  (columna nullable desde migration 002)
        result_summary: kind='clarification' → { type: 'clarification', question }
                        kind='plan'          → NULL  (execute-plan lo actualiza post-ejecución)
        schema_hash,

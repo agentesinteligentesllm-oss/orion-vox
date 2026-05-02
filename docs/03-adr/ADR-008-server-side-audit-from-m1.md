@@ -58,8 +58,10 @@ día 1 de M1. Sin excepciones.
 create table orion_audit (
   id              uuid primary key default gen_random_uuid(),
   ts              timestamptz not null default now(),
+  source          text not null
+    check (source in ('plan-intent', 'execute-plan')),
   user_prompt     text not null,
-  plan_json       jsonb not null,
+  plan_json       jsonb,
   sql_executed    text,
   sql_params      jsonb,
   rows_affected   int,
@@ -73,10 +75,12 @@ create table orion_audit (
 );
 
 create index idx_audit_ts on orion_audit (ts desc);
+create index idx_audit_source on orion_audit (source, ts desc);
 ```
 
-Las 14 columnas (más `id`) cubren identidad/tiempo (`id`, `ts`), origen
-(`user_prompt`, `client_version`, `schema_hash`), plan + SQL
+Las 15 columnas (más `id`) cubren identidad/tiempo (`id`, `ts`),
+origen de la Edge (`source`), input del usuario (`user_prompt`,
+`client_version`, `schema_hash`), plan + SQL
 (`plan_json`, `sql_executed`, `sql_params`), resultado (`rows_affected`,
 `result_summary`, `error`), y modo de ejecución (`was_dry_run`,
 `was_confirmed`, `duration_ms`).

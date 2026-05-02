@@ -181,7 +181,8 @@ interface ExecutePlanResponseError {
 6. Aplicar reglas hardcoded de bloqueo (DDL, multi-stmt, denylist)
    → si bloquea, 403 (igualmente intentar auditar)
 7. INSERT pre-ejecución en orion_audit:
-     { ts: now,
+     { source: 'execute-plan',
+       ts: now,
        user_prompt, plan_json, schema_hash, client_version,
        was_confirmed: body.was_confirmed ?? false,
        was_dry_run: (body.dry_run ?? plan.dry_run ?? false) || (body.rejected_by_user ?? false),

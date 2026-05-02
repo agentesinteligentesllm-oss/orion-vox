@@ -82,11 +82,19 @@ DDL completo (ver `AUDIT-MODEL.md §2`):
 2. Pegar:
 
 ```sql
+-- Ejecutar las migrations en orden:
+-- supabase/migrations/001_orion_audit.sql
+-- supabase/migrations/002_orion_audit_add_source_nullable_plan.sql
+--
+-- O bien, DDL equivalente completo (15 columnas):
+
 create table public.orion_audit (
   id              uuid primary key default gen_random_uuid(),
   ts              timestamptz not null default now(),
+  source          text not null
+    check (source in ('plan-intent', 'execute-plan')),
   user_prompt     text not null,
-  plan_json       jsonb not null,
+  plan_json       jsonb,
   sql_executed    text,
   sql_params      jsonb,
   rows_affected   int,
@@ -100,15 +108,15 @@ create table public.orion_audit (
 );
 
 create index idx_audit_ts on public.orion_audit (ts desc);
-
+create index idx_audit_source on public.orion_audit (source, ts desc);
 create index idx_audit_error on public.orion_audit (error)
   where error is not null;
-
 create index idx_audit_op on public.orion_audit
-  ((plan_json->>'operation'));
+  ((plan_json->>'operation'))
+  where plan_json is not null;
 
 comment on table public.orion_audit is
-  'Auditoría server-side de toda ejecución pasada por execute-plan.';
+  'Auditoría server-side de toda ejecución pasada por plan-intent y execute-plan.';
 ```
 
 3. Run. Verificar en Table Editor que aparece `orion_audit`.

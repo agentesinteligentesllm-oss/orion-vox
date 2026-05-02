@@ -46,13 +46,20 @@ create table public.orion_audit (
   id              uuid primary key default gen_random_uuid(),
   ts              timestamptz not null default now(),
 
+  -- Origen del registro (qué Edge Function lo creó)
+  source          text not null
+    check (source in ('plan-intent', 'execute-plan')),
+    -- 'plan-intent'   → planning entry (Gemini call)
+    -- 'execute-plan'  → execution entry (Postgres call)
+
   -- Origen del usuario
   user_prompt     text not null,
     -- frase original transcripta, en español
 
   -- Plan que se intentó ejecutar
-  plan_json       jsonb not null,
-    -- Plan JSON tal como llegó a la Edge
+  plan_json       jsonb,
+    -- Plan JSON validado. NULL cuando source='plan-intent' y
+    -- outcome=clarification, o cuando hubo error antes de parsear el plan
 
   -- SQL realmente generado (parametrizado, sin valores)
   sql_executed    text,
@@ -66,6 +73,7 @@ create table public.orion_audit (
   result_summary  jsonb,
     -- resumen del resultado; NO los datos completos si son grandes
     -- (ej: { sample: [...3 filas...], total: 152, truncated: true })
+    -- para clarifications: { type: 'clarification', question: '...' }
 
   -- Estado
   error           text,
@@ -87,54 +95,83 @@ create table public.orion_audit (
 
 -- Índices
 create index idx_audit_ts on public.orion_audit (ts desc);
+create index idx_audit_source on public.orion_audit (source, ts desc);
 create index idx_audit_error on public.orion_audit (error)
   where error is not null;
 create index idx_audit_op on public.orion_audit
-  ((plan_json->>'operation'));
+  ((plan_json->>'operation'))
+  where plan_json is not null;
 
 -- Append-only por convención: ningún UPDATE/DELETE manual.
 -- En M2 se considera revoke de DELETE/UPDATE para
 -- 'orion_vox_executor' sobre esta tabla.
 
 comment on table public.orion_audit is
-  'Auditoría server-side de toda ejecución pasada por execute-plan.';
+  'Auditoría server-side de toda ejecución pasada por plan-intent y execute-plan.';
+comment on column public.orion_audit.source is
+  'Edge Function que creó el registro: plan-intent (planning) o execute-plan (execution)';
+comment on column public.orion_audit.plan_json is
+  'Plan JSON validado. NULL cuando source=plan-intent y outcome=clarification, '
+  'o cuando hubo error antes de parsear el plan';
 ```
 
-**Notas sobre el DDL.**
+**Notas sobre el DDL.** (15 columnas desde migration 002)
 
 - `id` UUID v4 (`gen_random_uuid` requiere extensión `pgcrypto`).
 - `ts` con `timestamptz` (almacena con tz) — todos los timestamps
   internos son UTC.
+- `source` distingue entries de planning (`plan-intent`) de entries de
+  ejecución (`execute-plan`). CHECK constraint con dos valores.
+- `plan_json` es **nullable desde migration 002**: entries de
+  clarification y entradas pre-validación pueden no tener plan.
 - `plan_json` y `result_summary` y `sql_params` son `jsonb` (binario,
   indexable, queryable).
 - `sql_executed` guarda el SQL **parametrizado** (`$1`, `$2`), nunca
   con valores interpolados. Los valores van en `sql_params`. Esto
   permite buscar patrones de query sin acoplarse a datos puntuales.
+- `idx_audit_op` tiene `WHERE plan_json IS NOT NULL` para no indexar
+  los NULL de clarifications.
 - Los índices están pensados para los queries de auditoría más
-  frecuentes: por tiempo, por error, por tipo de operación.
+  frecuentes: por tiempo, por source, por error, por tipo de operación.
 
 ---
 
 ## 3. Ciclo de vida de un registro
 
-Cada operación atraviesa **dos escrituras** en `orion_audit`:
+Hay **tres combinaciones canónicas** de campos:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
+│  COMBINACIÓN 1: plan-intent → clarification                          │
+│  source='plan-intent', plan_json=NULL,                               │
+│  result_summary={ type:'clarification', question:'...' },            │
+│  error=NULL, was_dry_run=true                                        │
+│  → Gemini no pudo generar un plan; preguntó al usuario               │
+│  → 1 sola escritura (INSERT). Sin UPDATE posterior.                  │
+├──────────────────────────────────────────────────────────────────────┤
+│  COMBINACIÓN 2: plan-intent → plan retornado                         │
+│  source='plan-intent', plan_json=<plan validado>,                    │
+│  result_summary=NULL, error=NULL, was_dry_run=true                   │
+│  → Plan válido retornado al cliente; esperando execute-plan          │
+│  → 1 sola escritura (INSERT). Sin UPDATE posterior.                  │
+├──────────────────────────────────────────────────────────────────────┤
+│  COMBINACIÓN 3: execute-plan → ejecución (cualquier variante)        │
+│  source='execute-plan', plan_json=<plan recibido>, …                 │
 │                                                                      │
-│   1. INSERT pre-ejecución (en cuanto la Edge valida el Plan)         │
-│      - id generado                                                   │
-│      - ts = now()                                                    │
-│      - user_prompt, plan_json, schema_hash, was_confirmed,           │
-│        client_version, sql_executed, sql_params  → completos         │
-│      - rows_affected = NULL                                          │
-│      - result_summary = NULL                                         │
-│      - error = NULL                                                  │
-│      - duration_ms = NULL                                            │
+│  3a. Ejecución real: 2 escrituras                                    │
+│      INSERT pre-ejecución: plan_json, sql_executed, sql_params,      │
+│        was_confirmed, error=NULL, rows_affected=NULL                 │
+│      UPDATE post-ejecución: rows_affected, result_summary,           │
+│        error (si falló), duration_ms                                 │
 │                                                                      │
-│   2. UPDATE post-ejecución (cuando termina, exitosa o no)            │
-│      - rows_affected, result_summary, error, duration_ms  → set      │
+│  3b. dry_run: 2 escrituras                                           │
+│      INSERT: was_dry_run=true, sql_executed=NULL, error=NULL         │
+│      UPDATE: result_summary={ dry_run:true, sql_preview: '...' }     │
 │                                                                      │
+│  3c. rejected_by_user: 1 escritura                                   │
+│      INSERT: was_dry_run=true, was_confirmed=false,                  │
+│        error='rejected_by_user', sql_executed=NULL                   │
+│      Sin UPDATE (todo en el INSERT)                                  │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
