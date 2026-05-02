@@ -1,20 +1,20 @@
-export type Mode = 'voice' | 'config' | 'login';
+export type Mode = 'voice' | 'config';
 
 /** Pure parser — no DOM access, safe in tests and SSR. */
 export function parseMode(search: string): { mode: Mode; firstTime: boolean } {
   const params = new URLSearchParams(search);
-  // PKCE callback URL has ?code= — don't parse mode from it.
-  // The SDK exchanges the code and fires onAuthStateChange; route guard handles redirect.
-  if (params.has('code')) return { mode: 'login', firstTime: false };
+  // PKCE callback URL has ?code= — don't parse mode.
+  // SDK exchanges the code and fires onAuthStateChange; route guard handles redirect.
+  if (params.has('code')) return { mode: 'voice', firstTime: false };
   const m = params.get('mode');
   return {
-    mode: m === 'voice' || m === 'config' ? m : 'login',
+    mode: m === 'config' ? 'config' : 'voice',
     firstTime: params.get('first') === 'true',
   };
 }
 
 class RouterState {
-  mode = $state<Mode>('login');
+  mode = $state<Mode>('voice');
   firstTime = $state(false);
 
   navigate(mode: Mode, opts?: { firstTime?: boolean }): void {

@@ -15,20 +15,20 @@ describe('parseMode', () => {
     expect(parseMode('?mode=config&first=true')).toEqual({ mode: 'config', firstTime: true });
   });
 
-  it('returns login for unknown mode', () => {
-    expect(parseMode('?mode=unknown')).toEqual({ mode: 'login', firstTime: false });
+  it('returns voice for unknown mode (default)', () => {
+    expect(parseMode('?mode=unknown')).toEqual({ mode: 'voice', firstTime: false });
   });
 
-  it('returns login for empty search string', () => {
-    expect(parseMode('')).toEqual({ mode: 'login', firstTime: false });
+  it('returns voice for empty search string (default)', () => {
+    expect(parseMode('')).toEqual({ mode: 'voice', firstTime: false });
   });
 
-  it('returns login when ?code= is present (PKCE callback — do not parse mode)', () => {
-    expect(parseMode('?code=abc123&state=xyz')).toEqual({ mode: 'login', firstTime: false });
+  it('returns voice when ?code= is present (PKCE callback — do not parse mode)', () => {
+    expect(parseMode('?code=abc123&state=xyz')).toEqual({ mode: 'voice', firstTime: false });
   });
 
-  it('ignores ?mode= when ?code= is also present', () => {
-    expect(parseMode('?code=abc&mode=voice')).toEqual({ mode: 'login', firstTime: false });
+  it('ignores ?mode= when ?code= is also present (PKCE guard wins)', () => {
+    expect(parseMode('?code=abc&mode=config')).toEqual({ mode: 'voice', firstTime: false });
   });
 });
 
