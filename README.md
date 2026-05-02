@@ -21,7 +21,7 @@ escribir SQL ni tocar la consola de Supabase.
   `service_role`, valida allowlist y redacción, audita), `schema-summary`
   (autogenerada desde `pg_catalog`).
 - **Persistencia**: Tabla `orion_audit` server-side desde el día uno
-  (14 columnas en inglés). **Sin secretos en cliente**: Gemini key y
+  (15 columnas en inglés). **Sin secretos en cliente**: Gemini key y
   `service_role` viven en env vars de las Edge Functions; el cliente
   sólo guarda Supabase URL + `anon_key` pública + sesión Supabase Auth.
 

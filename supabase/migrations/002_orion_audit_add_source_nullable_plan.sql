@@ -13,6 +13,13 @@ alter table public.orion_audit
 
 create index idx_audit_source on public.orion_audit (source, ts desc);
 
+-- idx_audit_op: recrear con WHERE plan_json IS NOT NULL
+-- (plan_json ahora es nullable; no tiene sentido indexar NULLs de clarifications)
+drop index if exists idx_audit_op;
+create index idx_audit_op on public.orion_audit
+  ((plan_json->>'operation'))
+  where plan_json is not null;
+
 comment on column public.orion_audit.source is
   'Edge Function que disparó el audit entry: plan-intent (planning) o execute-plan (execution)';
 
