@@ -1,0 +1,6 @@
+{
+  "operation": "select",
+  "table": "tareas",
+  "columns": ["id", "titulo"],
+  "limit": 10
+}

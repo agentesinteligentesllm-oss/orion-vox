@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "operation": "insert",
+  "table": "tareas",
+  "values": {
+    "titulo": "comprar pilas",
+    "estado": "activa",
+    "categoria_id": "f4e33b2a-1c5d-4e7f-8a9b-0c1d2e3f4a5b"
+  }
+}

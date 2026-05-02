@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "tareas",
+  "filters": [
+    {
+      "column": "categoria_id",
+      "op": "in",
+      "value": {
+        "version": "1.0",
+        "operation": "select",
+        "table": "categorias",
+        "columns": ["id"]
+      }
+    }
+  ],
+  "limit": 10
+}

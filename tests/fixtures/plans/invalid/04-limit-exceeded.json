@@ -1,0 +1,6 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "tareas",
+  "limit": 999999
+}

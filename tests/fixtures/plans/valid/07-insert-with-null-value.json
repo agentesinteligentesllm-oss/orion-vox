@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "operation": "insert",
+  "table": "tareas",
+  "values": {
+    "titulo": "revisar stock",
+    "estado": "activa",
+    "completada_en": null,
+    "cantidad": 5,
+    "es_urgente": false
+  }
+}

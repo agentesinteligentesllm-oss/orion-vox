@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "tareas",
+  "columns": ["tareas.id", "tareas.titulo", "categorias.nombre"],
+  "joins": [
+    {
+      "type": "inner",
+      "table": "categorias",
+      "on": { "left": "tareas.categoria_id", "right": "categorias.id" }
+    }
+  ],
+  "filters": [
+    { "column": "tareas.estado", "op": "=", "value": "activa" }
+  ],
+  "limit": 100
+}

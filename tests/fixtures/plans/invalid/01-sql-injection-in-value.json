@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "tareas",
+  "filters": [
+    { "column": "estado", "op": "=", "value": "activa'); DROP TABLE tareas; --" }
+  ],
+  "limit": 10
+}

@@ -1,0 +1,7 @@
+{
+  "version": "2.0",
+  "operation": "select",
+  "table": "tareas",
+  "columns": ["id", "titulo"],
+  "limit": 10
+}

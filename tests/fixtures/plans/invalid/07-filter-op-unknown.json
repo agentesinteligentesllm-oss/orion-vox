@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "tareas",
+  "columns": ["id", "titulo"],
+  "filters": [
+    { "column": "titulo", "op": "contains", "value": "urgente" }
+  ],
+  "limit": 10
+}

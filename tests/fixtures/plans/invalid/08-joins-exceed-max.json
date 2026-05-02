@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "tareas",
+  "columns": ["tareas.id", "categorias.nombre", "usuarios.email"],
+  "joins": [
+    {
+      "type": "inner",
+      "table": "categorias",
+      "on": { "left": "tareas.categoria_id", "right": "categorias.id" }
+    },
+    {
+      "type": "inner",
+      "table": "usuarios",
+      "on": { "left": "tareas.usuario_id", "right": "usuarios.id" }
+    }
+  ],
+  "limit": 100
+}
