@@ -3,6 +3,8 @@ import postgres from 'postgres';
 import { PlanSchema } from '../_shared/plan-schema.ts';
 import { buildQuery } from '../_shared/query-builder.ts';
 import { redactSqlParams } from '../_shared/redact.ts';
+import { isSchemaStale } from '../_shared/schema-stale.ts';
+import { getSchemaSummary, type SqlRunner } from '../_shared/schema-summary-core.ts';
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
@@ -25,9 +27,9 @@ const PWA_ORIGIN = Deno.env.get('PWA_ORIGIN') ?? '*';
 // ─── DB connection (lazy singleton) ──────────────────────────────────────────
 
 let _db: ReturnType<typeof postgres> | null = null;
-function db(): ReturnType<typeof postgres> {
+function db(): SqlRunner {
   if (!_db) _db = postgres(DB_URL, { max: 1 });
-  return _db;
+  return _db as unknown as SqlRunner;
 }
 
 // ─── Response helpers ─────────────────────────────────────────────────────────
@@ -72,18 +74,13 @@ function redactRows(rows: Row[]): Row[] {
   });
 }
 
-// ─── Schema hash (T1.6 stub — graceful fallback if not yet deployed) ──────────
+// ─── Schema hash — direct pg_catalog call, no HTTP ───────────────────────────
 
 async function fetchCurrentSchemaHash(): Promise<string | null> {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return null;
+  if (!ALLOWED_TABLES.length) return null;
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/schema-summary`, {
-      headers: { Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
-      signal: AbortSignal.timeout(3000),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { hash?: string };
-    return data.hash ?? null;
+    const result = await getSchemaSummary(db(), ALLOWED_TABLES);
+    return result.schema_hash;
   } catch {
     return null;
   }
@@ -268,9 +265,9 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // 5b. Schema hash check (skipped gracefully if schema-summary not yet deployed — T1.6)
+  // 5b. Schema hash check (graceful fallback if pg unavailable — currentHash === null skips)
   const currentHash = await fetchCurrentSchemaHash();
-  if (currentHash !== null && schemaHash !== currentHash) {
+  if (isSchemaStale(schemaHash, currentHash)) {
     return err(409, 'schema_stale', 'El esquema cambió. Volvé a pedir el plan.');
   }
 

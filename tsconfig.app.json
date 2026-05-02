@@ -22,7 +22,8 @@
     /* Module */
     "allowJs": false,
     "checkJs": false,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "supabase/functions/_shared/**/*.ts"]
 }

@@ -12,11 +12,13 @@ function assertEqual(actual: unknown, expected: unknown, label: string): void {
 }
 
 function assertContains(str: string, sub: string, label: string): void {
-  if (!str.includes(sub)) throw new Error(`${label}: expected to contain "${sub}"\n  actual: ${str}`);
+  if (!str.includes(sub))
+    throw new Error(`${label}: expected to contain "${sub}"\n  actual: ${str}`);
 }
 
 function assertNotContains(str: string, sub: string, label: string): void {
-  if (str.includes(sub)) throw new Error(`${label}: expected NOT to contain "${sub}"\n  actual: ${str}`);
+  if (str.includes(sub))
+    throw new Error(`${label}: expected NOT to contain "${sub}"\n  actual: ${str}`);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -134,8 +136,22 @@ Deno.test('[schema-markdown] buildSchemaSummary: generates correct H1 header', (
 });
 
 Deno.test('[schema-markdown] buildSchemaSummary: sorts tables alphabetically', () => {
-  const t1: TableInfo = { table_name: 'zonas', table_comment: null, columns: [], pk_columns: [], fks: [], non_pk_index_names: [] };
-  const t2: TableInfo = { table_name: 'articulos', table_comment: null, columns: [], pk_columns: [], fks: [], non_pk_index_names: [] };
+  const t1: TableInfo = {
+    table_name: 'zonas',
+    table_comment: null,
+    columns: [],
+    pk_columns: [],
+    fks: [],
+    non_pk_index_names: [],
+  };
+  const t2: TableInfo = {
+    table_name: 'articulos',
+    table_comment: null,
+    columns: [],
+    pk_columns: [],
+    fks: [],
+    non_pk_index_names: [],
+  };
   const md = buildSchemaSummary([t1, t2], 'public', FIXED_TS);
   const idx1 = md.indexOf('## articulos');
   const idx2 = md.indexOf('## zonas');
@@ -154,8 +170,22 @@ Deno.test('[schema-markdown] buildSchemaSummary: is deterministic', () => {
 });
 
 Deno.test('[schema-markdown] buildSchemaSummary: sections separated by blank lines', () => {
-  const t1: TableInfo = { table_name: 'alpha', table_comment: null, columns: [], pk_columns: [], fks: [], non_pk_index_names: [] };
-  const t2: TableInfo = { table_name: 'beta', table_comment: null, columns: [], pk_columns: [], fks: [], non_pk_index_names: [] };
+  const t1: TableInfo = {
+    table_name: 'alpha',
+    table_comment: null,
+    columns: [],
+    pk_columns: [],
+    fks: [],
+    non_pk_index_names: [],
+  };
+  const t2: TableInfo = {
+    table_name: 'beta',
+    table_comment: null,
+    columns: [],
+    pk_columns: [],
+    fks: [],
+    non_pk_index_names: [],
+  };
   const md = buildSchemaSummary([t1, t2], 'public', FIXED_TS);
   assertContains(md, '## alpha', 'alpha section');
   assertContains(md, '## beta', 'beta section');

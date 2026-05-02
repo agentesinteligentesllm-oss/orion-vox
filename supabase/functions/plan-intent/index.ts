@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import { PlanSchema } from '../_shared/plan-schema.ts';
+import { getSchemaSummary, type SqlRunner } from '../_shared/schema-summary-core.ts';
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
@@ -22,43 +23,42 @@ const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000;
 const genai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 let _db: ReturnType<typeof postgres> | null = null;
-function db(): ReturnType<typeof postgres> {
+function db(): SqlRunner {
   if (!_db) _db = postgres(DB_URL, { max: 1 });
-  return _db;
+  return _db as unknown as SqlRunner;
 }
 
 // ─── Schema-summary cache ─────────────────────────────────────────────────────
 
 interface SchemaCacheEntry {
   markdown: string;
-  hash: string;
+  schema_hash: string;
   expiresAt: number;
 }
 const schemaCache = new Map<string, SchemaCacheEntry>();
 
 async function getSchemaOrThrow(
   forceRefresh: boolean,
-): Promise<{ markdown: string; hash: string }> {
+): Promise<{ markdown: string; schema_hash: string }> {
   if (!forceRefresh) {
     const cached = schemaCache.get('');
     if (cached && Date.now() < cached.expiresAt) {
-      return { markdown: cached.markdown, hash: cached.hash };
+      return { markdown: cached.markdown, schema_hash: cached.schema_hash };
     }
   }
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/schema-summary`, {
-    headers: { Authorization: `Bearer ${SERVICE_ROLE_KEY}` },
-    signal: AbortSignal.timeout(5000),
-  });
-  if (!res.ok) throw new Error(`schema_summary_failed: HTTP ${res.status}`);
-  const data = (await res.json()) as { markdown?: string; hash?: string };
-  if (!data.markdown || !data.hash) throw new Error('schema_summary_failed: invalid response');
+  const allowedTablesEnv = Deno.env.get('ORION_ALLOWED_TABLES') ?? '';
+  const allowedTables = allowedTablesEnv
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const result = await getSchemaSummary(db(), allowedTables);
   const entry: SchemaCacheEntry = {
-    markdown: data.markdown,
-    hash: data.hash,
+    markdown: result.markdown,
+    schema_hash: result.schema_hash,
     expiresAt: Date.now() + SCHEMA_CACHE_TTL_MS,
   };
   schemaCache.set('', entry);
-  return { markdown: data.markdown, hash: data.hash };
+  return { markdown: result.markdown, schema_hash: result.schema_hash };
 }
 
 // ─── System prompt ────────────────────────────────────────────────────────────
@@ -434,7 +434,7 @@ Deno.serve(async (req: Request) => {
   try {
     const s = await getSchemaOrThrow(forceRefresh);
     schemaMarkdown = s.markdown;
-    schemaHash = s.hash;
+    schemaHash = s.schema_hash;
   } catch {
     return err(
       500,
