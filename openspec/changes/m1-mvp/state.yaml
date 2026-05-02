@@ -1,0 +1,45 @@
+change_id: m1-mvp
+title: "M1 - Base segura funcional Orion Vox"
+status: in-progress  # draft | in-review | in-progress | completed | archived
+owner: orion-vox
+target_milestone: M1
+created: 2026-05-01
+last_updated: 2026-05-01
+dependencies: []  # ADR-012 fue creado en Wave 1; ya no es dependencia bloqueante
+artifacts:
+  proposal: proposal.md
+  spec: spec.md
+  design: design.md
+  tasks: tasks.md
+acceptance_criteria:
+  - "Login Supabase Auth funciona (magic link recibido, sesion persistente)"
+  - "Edge plan-intent recibe prompt + JWT, llama Gemini server-side, devuelve Plan JSON o Clarification"
+  - "Edge execute-plan ejecuta Plan JSON con allowlist server, audita, devuelve resultado"
+  - "Edge schema-summary autogenerada, filtrada por ORION_ALLOWED_TABLES, redactada por ORION_REDACTED_COLUMNS"
+  - "JWT invalido / user.id distinto rechazado con 401, intento auditado"
+  - "Smoke E2E voz->Supabase exitoso en Cubot KK9 (post Web Speech smoke)"
+  - "Confirmacion tactil bloquea writes hasta tap explicito"
+  - "Operaciones DDL bloqueadas server-side y reportadas con error legible"
+  - "Allowlist server rechaza tablas no listadas con 403"
+  - "Politica de redaccion ORION_REDACTED_COLUMNS aplica en sql_params, result_summary y TTS"
+  - "Auditoria 100% cobertura: ok, error, bloqueado, rechazado por usuario"
+  - "Deploy live accesible HTTPS e instalable como PWA en Cubot KK9"
+  - "Todas las US M1 marcadas como done"
+related_adrs:
+  - ADR-001  # Plan F+ arquitectura
+  - ADR-003  # Plan JSON
+  - ADR-004  # service_role server-side M1, rol dedicado M2
+  - ADR-005  # Gemini key server-side desde M1 (reescrito)
+  - ADR-006  # PWA pura
+  - ADR-007  # Web Speech API
+  - ADR-008  # auditoria server-side desde M1
+  - ADR-009  # roadmap modular (reescrito post auditoria Codex)
+  - ADR-010  # schema autogeneracion
+  - ADR-012  # framework PWA Svelte 5 + Vite + TS (creado Wave 1)
+notes: |
+  ADR-012 framework PWA APROBADO (Svelte 5 + Vite + TypeScript).
+  Reforma de seguridad post-Codex completada en Wave 1: auth Supabase + JWT,
+  Gemini key server-side en plan-intent, allowlist y redaccion server-side,
+  separacion de Edge Functions desde dia 1.
+  TECHNICAL-DEBT residual M1->M2: TD-001-bis, TD-003, TD-004, TD-005 (4 items).
+  Listo para arrancar Bloque 0 (setup base Svelte 5 + Vite + TS).
