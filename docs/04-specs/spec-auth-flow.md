@@ -136,7 +136,12 @@ solo en `Deno.env`, **nunca** sale al cliente.
 1. Director instala PWA, abre por primera vez.
 2. PWA detecta sesión Supabase ausente → muestra pantalla de login.
 3. Director ingresa su email → tap "Enviar enlace".
-4. PWA llama `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo } })`.
+4. PWA llama `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } })`.
+
+   > **Nota implementación:** `emailRedirectTo` debe ser `window.location.origin` (valor dinámico
+   > en runtime), no un string hardcodeado. Dev local usa `http://localhost:5173` y prod usa el
+   > dominio Vercel — hardcodear rompería uno de los dos environments. El SDK parsea el token del
+   > hash fragment de la URL resultante automáticamente vía `detectSessionInUrl: true`.
 5. Director abre el email en el Cubot KK9 → tap el magic link → callback
    en la PWA.
 6. PWA parsea el token de la URL (`@supabase/supabase-js` lo hace

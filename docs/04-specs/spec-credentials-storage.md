@@ -147,11 +147,23 @@ interface LocalStorageAPI {
 
 ```ts
 async function wipeAll() {
-  await indexedDB.deleteDatabase('orion_vox_v1');
+  await deleteIndexedDB('orion_vox_v1');
   // La sesión Supabase Auth se limpia con supabase.auth.signOut()
   // en el flujo de logout (ver spec-auth-flow §5.4).
 }
+
+function deleteIndexedDB(name: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(name);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
 ```
+
+> **Nota implementación:** `indexedDB.deleteDatabase()` retorna `IDBOpenDBRequest` (callback-based),
+> **NO** una `Promise`. Hacer `await indexedDB.deleteDatabase(...)` directamente resuelve el request
+> sin esperar su completion. El wrapper `deleteIndexedDB` es obligatorio para `await` semántico correcto.
 
 ## 6. Comportamiento esperado
 
