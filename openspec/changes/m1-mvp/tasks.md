@@ -48,7 +48,7 @@ se complete y se valide.
   según Lighthouse.
 - [ ] **T0.5** — Estructura de carpetas: `src/lib/` (módulos
   reutilizables), `src/routes/` (vistas), `src/components/` (UI),
-  `src/lib/server-shared/` (validador Plan JSON compartido).
+  `src/lib/contracts/` (barrel de contratos compartidos; ADR-013).
   *Aceptación*: árbol creado y `index.ts` en cada lib exporta lo suyo.
 
 ---
@@ -145,7 +145,7 @@ se complete y se valide.
   *Aceptación*: frase ambigua ("borra eso") muestra pregunta de
   clarificación en pantalla y/o TTS.
 - [ ] **T3.3** — Validador Plan JSON cliente (Zod) usando el módulo
-  compartido `src/lib/server-shared/plan-schema.ts`.
+  compartido `src/lib/contracts/plan-schema.ts` (barrel → `$shared`; ADR-013).
   *Aceptación*: Plan inválido recibido del server se rechaza
   client-side con código de error específico antes de mostrar al
   usuario.
