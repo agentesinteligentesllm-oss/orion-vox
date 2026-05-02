@@ -1,4 +1,5 @@
 <script lang="ts">
+import Config from './components/Config.svelte';
 import { authStore } from './lib/auth-store.svelte.ts';
 import { router } from './lib/router.svelte.ts';
 
@@ -20,11 +21,7 @@ $effect(() => {
     <p class="text-gray-400">Cargando…</p>
   </div>
 {:else if router.mode === 'config'}
-  <!-- B2.3: Config.svelte (LoginWizard when firstTime, Settings otherwise) -->
-  <div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
-    <h1 class="text-4xl font-bold tracking-tight">Orion Vox</h1>
-    <p class="mt-2 text-gray-400">Configuración…</p>
-  </div>
+  <Config />
 {:else}
   <!-- B3+: VoiceScreen.svelte goes here -->
   <div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
