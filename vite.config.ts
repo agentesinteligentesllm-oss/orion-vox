@@ -54,7 +54,7 @@ export default defineConfig({
           {
             name: 'Configuración',
             short_name: 'Config',
-            url: '/config',
+            url: '/?mode=config',
             icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
           },
           {

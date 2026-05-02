@@ -1,7 +1,37 @@
 <script lang="ts">
+import { authStore } from './lib/auth-store.svelte.ts';
+import { router } from './lib/router.svelte.ts';
+
+// Route guard: keep mode and auth state in sync
+$effect(() => {
+  if (authStore.loading) return;
+  if (!authStore.isAuthenticated && router.mode !== 'login') {
+    router.navigate('login');
+  } else if (authStore.isAuthenticated && router.mode === 'login') {
+    router.navigate(router.firstTime ? 'config' : 'voice', { firstTime: router.firstTime });
+  }
+});
 </script>
 
-<div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
-  <h1 class="text-4xl font-bold tracking-tight">Orion Vox</h1>
-  <p class="mt-2 text-gray-400">Inicializando...</p>
-</div>
+{#if authStore.loading}
+  <div class="flex min-h-dvh items-center justify-center bg-gray-950 text-gray-100">
+    <p class="text-gray-400">Cargando…</p>
+  </div>
+{:else if !authStore.isAuthenticated}
+  <!-- B2.3: Login.svelte goes here -->
+  <div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
+    <h1 class="mb-6 text-4xl font-bold tracking-tight">Orion Vox</h1>
+    <p class="text-gray-400">Iniciando sesión…</p>
+  </div>
+{:else if router.mode === 'config'}
+  <!-- B2.5: Config.svelte goes here -->
+  <div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
+    <h1 class="text-4xl font-bold tracking-tight">Configuración</h1>
+  </div>
+{:else}
+  <!-- B3+: VoiceScreen.svelte goes here -->
+  <div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
+    <h1 class="text-4xl font-bold tracking-tight">Orion Vox</h1>
+    <p class="mt-2 text-gray-400">Listo para escucharte.</p>
+  </div>
+{/if}
