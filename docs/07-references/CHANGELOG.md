@@ -28,6 +28,10 @@ cambio de contenido (esos cambios viven en el historial de commits).
 ## [Unreleased]
 
 ### Added
+- `supabase/functions/_shared/redact.ts` — `redactSqlParams` extraída a shared; cubre ahora `filters[].value` además de `plan.values` (INSERT/UPDATE). Param ordering documentado por operación.
+- `tests/fixtures/plans/valid/12-update-with-redacted-filter.json` y `13-select-with-redacted-filter.json` — fixtures para cobertura de redacción en filtros.
+- `tests/contracts/redact.test.ts` + `supabase/functions/tests/redact_test.ts` — tests cross-runtime (3 casos): UPDATE filter redacted, SELECT filter redacted + LIMIT intacto, empty set no-op.
+- `docs/05-implementation/TECHNICAL-DEBT.md` TD-008 — retry inteligente para Plan JSON inválido del LLM (M2).
 - `tests/smoke/border.test.ts` — guard ADR-013: `$shared/*` solo permite `plan-schema`; cualquier otro path falla.
 - `docs/03-adr/ADR-013-shared-plan-schema-strategy.md` — estrategia de validador compartido entre PWA y Deno sin monorepo.
 - `supabase/functions/_shared/plan-schema.ts` — schema Zod 4 canónico (ops SQL, NULL discriminated union, patrones de identificador).
@@ -38,6 +42,17 @@ cambio de contenido (esos cambios viven en el historial de commits).
 - `tests/contracts/import-guard.test.ts` — guard que impide imports directos de `supabase/functions/` desde `src/`.
 - Fixtures válidos 09/10/11 — cobertura completa de los 12 ops del spec (`!=`, `<`, `>`, `<=`, `>=`, `like`, `not_in`, `is_null`, `is_not_null`).
 - `tests/fixtures/plans/invalid/01-multi-statement-in-value.json` (renombrado de `01-sql-injection-in-value.json`).
+
+### Fixed (B1.fix — redact + Gemini SDK)
+- `execute-plan/index.ts`: `redactSqlParams` ahora cubre `filters[].value`; columnas redactadas
+  en cláusulas WHERE ya no se filtran del log de auditoría. Extraída a `_shared/redact.ts`
+  para testabilidad cross-runtime.
+- `plan-intent/index.ts`: `response.functionCalls` era invocado como método (`?.()`) — es un
+  getter (`get functionCalls(): FunctionCall[] | undefined`) en `@google/genai@1.51.0`.
+  Habría lanzado `TypeError` en deploy real.
+- `execute-plan/index.ts`: `tryAuditError` documentada explícitamente como best-effort SOLO
+  para error-paths pre-ejecución. El INSERT pre-flight (paso 7) aborta con 500 y no usa
+  esta función — invariante "sin audit no hay ejecución" confirmado y comentado.
 
 ### Fixed (B1.partial — specs reconciliados)
 - `spec-plan-intent-edge.md`: `conversation_id` removido de M1; `allowed_function_names`

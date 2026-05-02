@@ -210,6 +210,28 @@ Estados posibles: `abierta` | `en-progreso` | `cerrada` |
 
 ---
 
+### TD-008 — Sin retry inteligente para Plan JSON inválido del LLM
+
+- **Descripción**: si Gemini devuelve un `function_call` con argumentos
+  que fallan validación Zod (schema incorrecto, campo faltante, op
+  desconocida), `plan-intent` retorna 502 `invalid_plan_from_llm` sin
+  ningún mecanismo de auto-corrección. El usuario debe reformular o
+  reintentar manualmente.
+- **Contraída en**: M1.
+- **Pagada en**: M2.
+- **Estado**: `abierta`.
+- **Fecha de cierre**: —
+- **Plan de pago**: M2 agrega un retry (máximo 1 vez) en `plan-intent`:
+  si el primer llamado a Gemini produce un plan inválido, se reenvía
+  el llamado incluyendo el error Zod serializado en el contexto
+  (`user` message con el JSON inválido + el mensaje de error) para
+  que Gemini pueda auto-corregir. Si el segundo intento también falla,
+  retorna 502 al cliente.
+- **ADR**: ninguno (decisión de implementación B1 aceptada para M1).
+- **US relacionada**: ninguna directa (resiliencia UX).
+
+---
+
 ## Deuda contraída en M2 (paga M3 o más adelante)
 
 > Ningún item registrado todavía. Se agregarán durante el desarrollo
@@ -238,9 +260,10 @@ Estados posibles: `abierta` | `en-progreso` | `cerrada` |
 | TD-005     | RLS off en `orion_audit`                        | ADR-008          | US-AUD-01           | abierta           | M2 |
 | TD-006     | Sin JWT del usuario (anon key)                  | (resuelto)       | —                   | resuelta-en-m1    | 2026-05-01 |
 | TD-007     | Sin split plan-intent / execute-plan            | ADR-005          | —                   | resuelta-en-m1    | 2026-05-01 |
+| TD-008     | Sin retry para Plan JSON inválido del LLM       | —                | —                   | abierta           | M2 |
 
 **Deuda M1 que efectivamente cruza a M2**: TD-001-bis, TD-003, TD-004,
-TD-005. Cuatro items, todos contenidos y con plan de pago claro.
+TD-005, TD-008. Cinco items, todos contenidos y con plan de pago claro.
 
 ---
 

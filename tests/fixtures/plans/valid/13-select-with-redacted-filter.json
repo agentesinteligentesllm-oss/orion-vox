@@ -1,0 +1,8 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "users",
+  "columns": ["id", "email"],
+  "filters": [{ "column": "password", "op": "=", "value": "secret123" }],
+  "limit": 10
+}

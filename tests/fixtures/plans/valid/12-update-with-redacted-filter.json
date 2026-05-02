@@ -1,0 +1,7 @@
+{
+  "version": "1.0",
+  "operation": "update",
+  "table": "users",
+  "values": { "email": "new@example.com" },
+  "filters": [{ "column": "password", "op": "=", "value": "secret123" }]
+}

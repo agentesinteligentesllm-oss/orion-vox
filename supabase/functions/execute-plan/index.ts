@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
-import type { Plan } from '../_shared/plan-schema.ts';
 import { PlanSchema } from '../_shared/plan-schema.ts';
 import { buildQuery } from '../_shared/query-builder.ts';
+import { redactSqlParams } from '../_shared/redact.ts';
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
@@ -69,16 +69,6 @@ function redactRows(rows: Row[]): Row[] {
       out[k] = REDACTED_COLS.has(k.toLowerCase()) ? '[REDACTED]' : v;
     }
     return out;
-  });
-}
-
-function redactSqlParams(plan: Plan, params: unknown[]): unknown[] {
-  if (REDACTED_COLS.size === 0) return params;
-  if (plan.operation !== 'insert' && plan.operation !== 'update') return params;
-  const keys = Object.keys(plan.values);
-  return params.map((p, i) => {
-    const col = keys[i];
-    return col !== undefined && REDACTED_COLS.has(col.toLowerCase()) ? '[REDACTED]' : p;
   });
 }
 
@@ -157,6 +147,10 @@ async function auditUpdate(
   );
 }
 
+// Best-effort audit for early-exit error paths (validation/allowlist failures).
+// These are called BEFORE the main execution path when we're already returning an error,
+// so a secondary audit failure doesn't change the outcome for the client.
+// The pre-execution audit at step 7 is NOT best-effort: it aborts with 500 on failure.
 async function tryAuditError(
   userPrompt: string,
   planJson: unknown,
@@ -168,7 +162,7 @@ async function tryAuditError(
   try {
     await auditInsert(userPrompt, planJson, schemaHash, clientVersion, wasConfirmed, false, error);
   } catch {
-    // best-effort
+    // swallow — we're already returning an error response
   }
 }
 
@@ -385,7 +379,7 @@ Deno.serve(async (req: Request) => {
 
   // 12. Redact sensitive columns
   const redacted = redactRows(pgRows);
-  const redactedParams = redactSqlParams(plan, params);
+  const redactedParams = redactSqlParams(plan, params, REDACTED_COLS);
 
   // 13. UPDATE audit post-execution
   try {
