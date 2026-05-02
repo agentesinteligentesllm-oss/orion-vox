@@ -298,7 +298,7 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<Gem
       });
       const response = await Promise.race([call, timeout]);
 
-      const calls = response.functionCalls?.();
+      const calls = response.functionCalls;
       const fc = calls?.[0];
       if (!fc?.name) throw new Error('invalid_plan_from_llm: no function call in response');
 

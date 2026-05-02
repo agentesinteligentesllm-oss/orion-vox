@@ -31,7 +31,7 @@ cambio de contenido (esos cambios viven en el historial de commits).
 - `tests/smoke/border.test.ts` — guard ADR-013: `$shared/*` solo permite `plan-schema`; cualquier otro path falla.
 - `docs/03-adr/ADR-013-shared-plan-schema-strategy.md` — estrategia de validador compartido entre PWA y Deno sin monorepo.
 - `supabase/functions/_shared/plan-schema.ts` — schema Zod 4 canónico (ops SQL, NULL discriminated union, patrones de identificador).
-- `supabase/migrations/001_orion_audit.sql` — DDL canónico de `orion_audit`, 14 columnas, 3 índices.
+- `supabase/migrations/001_orion_audit.sql` — DDL inicial de `orion_audit`, 14 columnas, 3 índices (migration 002 agrega la columna 15: `source`).
 - `supabase/migrations/002_orion_audit_add_source_nullable_plan.sql` — columna `source` NOT NULL (plan-intent | execute-plan) + `plan_json` nullable para clarifications y errores pre-parse.
 - `tests/contracts/plan-schema.test.ts` — validación Vitest de todos los fixtures contra `PlanSchema` con assert 12/12 ops.
 - `supabase/functions/tests/plan-schema_test.ts` — parity test Deno nativo, mismos fixtures y misma cobertura.
