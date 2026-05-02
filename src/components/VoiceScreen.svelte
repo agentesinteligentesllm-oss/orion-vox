@@ -1,4 +1,5 @@
 <script lang="ts">
+import { authStore } from '../lib/auth-store.svelte.ts';
 import { router } from '../lib/router.svelte.ts';
 import { localStore } from '../lib/storage/local-store.ts';
 import type { Idioma } from '../lib/storage/types.ts';
@@ -18,6 +19,7 @@ let lastResult = $state('');
 let errorInfo = $state<VoiceInputError | null>(null);
 let showKeyboard = $state(false);
 let keyboardInput = $state('');
+let micPermission = $state<PermissionState | null>(null);
 
 recognition.on('state', (s) => {
   voiceState = s;
@@ -38,7 +40,7 @@ recognition.on('result', async (text) => {
 });
 recognition.on('error', (err) => {
   errorInfo = err;
-  if (err.code === 'unavailable') showKeyboard = true;
+  if (err.code === 'unavailable' || err.code === 'not-allowed') showKeyboard = true;
 });
 
 $effect(() => {
@@ -47,7 +49,38 @@ $effect(() => {
   });
 });
 
+// Auto-listen: fires only when mode=voice, session active, and mic already granted.
+// Avoids surprise permission prompt on first load.
+$effect(() => {
+  if (router.mode !== 'voice') return;
+  if (!authStore.session) return;
+  if (!('permissions' in navigator)) return;
+
+  navigator.permissions
+    .query({ name: 'microphone' as PermissionName })
+    .then((status) => {
+      micPermission = status.state;
+      status.onchange = () => {
+        micPermission = status.state;
+        if (status.state === 'granted' && voiceState === 'idle') {
+          recognition.start();
+        } else if (status.state === 'denied') {
+          showKeyboard = true;
+        }
+      };
+      if (status.state === 'granted' && voiceState === 'idle') {
+        recognition.start();
+      } else if (status.state === 'denied') {
+        showKeyboard = true;
+      }
+    })
+    .catch(() => {
+      // Permission API unavailable — normal tap flow
+    });
+});
+
 async function handleMicTap() {
+  if (micPermission === 'denied') return;
   if (voiceState === 'idle' || voiceState === 'error') {
     errorInfo = null;
     tts.cancel();
@@ -101,11 +134,12 @@ function goToSettings() {
       <button
         type="button"
         onclick={handleMicTap}
-        aria-label={voiceState === 'listening' ? 'Detener' : 'Hablar'}
-        disabled={voiceState === 'processing'}
+        aria-label={voiceState === 'listening' ? 'Detener' : micPermission === 'prompt' ? 'Activar micrófono' : 'Hablar'}
+        disabled={voiceState === 'processing' || micPermission === 'denied'}
         class={[
           'flex h-24 w-24 items-center justify-center rounded-full border-2 transition-colors duration-200',
-          voiceState === 'idle' && 'border-gray-600 bg-gray-800 text-gray-300 hover:border-indigo-500 hover:bg-indigo-900/30 hover:text-indigo-300 active:bg-indigo-900/50',
+          (voiceState === 'idle' && micPermission !== 'denied') && 'border-gray-600 bg-gray-800 text-gray-300 hover:border-indigo-500 hover:bg-indigo-900/30 hover:text-indigo-300 active:bg-indigo-900/50',
+          micPermission === 'denied' && 'cursor-not-allowed border-gray-800 bg-gray-900 text-gray-700',
           voiceState === 'listening' && 'animate-pulse border-indigo-500 bg-indigo-900/40 text-indigo-300',
           voiceState === 'processing' && 'cursor-not-allowed border-gray-700 bg-gray-800 text-gray-500',
           voiceState === 'error' && 'border-red-700 bg-red-950/30 text-red-400 hover:border-red-500 hover:bg-red-900/40',
@@ -133,9 +167,18 @@ function goToSettings() {
       <!-- State label -->
       <div class="min-h-6 text-center">
         {#if voiceState === 'idle'}
-          <p class="text-sm text-gray-500">
-            {lastResult ? 'Tocá para continuar.' : 'Listo para escucharte.'}
-          </p>
+          {#if micPermission === 'denied'}
+            <p class="max-w-xs text-center text-sm text-red-400">
+              Permiso de micrófono denegado. Habilitalo en Ajustes del navegador o usá el teclado.
+            </p>
+          {:else if micPermission === 'prompt'}
+            <p class="text-sm text-gray-400">Tocá para activar el micrófono.</p>
+            <p class="mt-1 text-xs text-gray-600">El navegador pedirá permiso de micrófono.</p>
+          {:else}
+            <p class="text-sm text-gray-500">
+              {lastResult ? 'Tocá para continuar.' : 'Listo para escucharte.'}
+            </p>
+          {/if}
         {:else if voiceState === 'listening'}
           <p class="text-sm font-medium text-indigo-400">Escuchando…</p>
         {:else if voiceState === 'processing'}
