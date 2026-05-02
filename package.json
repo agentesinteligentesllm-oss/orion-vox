@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit -p tsconfig.app.json",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "test:contracts": "vitest run tests/contracts"
+    "test:contracts": "vitest run tests/contracts && (cd supabase/functions && deno task test:contracts)"
   },
   "//": "vite pinned to ^7 — vite-plugin-pwa@1.2.0 no soporta Vite 8. Revisitar cuando vite-plugin-pwa@2.x salga con soporte Vite 8.",
   "devDependencies": {

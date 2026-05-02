@@ -27,6 +27,26 @@ cambio de contenido (esos cambios viven en el historial de commits).
 
 ## [Unreleased]
 
+### Added
+- `docs/03-adr/ADR-013-shared-plan-schema-strategy.md` — estrategia de validador compartido entre PWA y Deno sin monorepo.
+- `supabase/functions/_shared/plan-schema.ts` — schema Zod 4 canónico (ops SQL, NULL discriminated union, patrones de identificador).
+- `supabase/migrations/001_orion_audit.sql` — DDL canónico de `orion_audit`, 14 columnas, 3 índices.
+- `tests/contracts/plan-schema.test.ts` — validación Vitest de todos los fixtures contra `PlanSchema` con assert 12/12 ops.
+- `supabase/functions/tests/plan-schema_test.ts` — parity test Deno nativo, mismos fixtures y misma cobertura.
+- `tests/contracts/import-guard.test.ts` — guard que impide imports directos de `supabase/functions/` desde `src/`.
+- Fixtures válidos 09/10/11 — cobertura completa de los 12 ops del spec (`!=`, `<`, `>`, `<=`, `>=`, `like`, `not_in`, `is_null`, `is_not_null`).
+- `tests/fixtures/plans/invalid/01-multi-statement-in-value.json` (renombrado de `01-sql-injection-in-value.json`).
+
+### Fixed
+- `_shared/plan-schema.ts`: alineado con PLAN-JSON-CONTRACT.md §5.
+  Ops de filtro corregidos a SQL (`=`, `!=`, `<`, etc.) en lugar de
+  nombrados (`eq`, `neq`). NULL ops como discriminated union sin `value`.
+  Campo `order_by` (no `order`), propiedad `dir` (no `direction`).
+  Joins restringidos a `inner` en M1. Sin `offset` (es M2).
+  Patrones de identificador `TABLE_RE`/`COL_RE` para defensa en profundidad.
+  Causa: schema escrito sin consultar spec autoritativo. Detectado
+  pre-implementación de Edge Functions, sin impacto en deploy.
+
 ### Constraints
 - Vite pinned to `^7` (vite-plugin-pwa pendiente de soporte Vite 8). `@sveltejs/vite-plugin-svelte` en v6 en consecuencia.
 

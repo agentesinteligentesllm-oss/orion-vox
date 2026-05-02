@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "productos",
+  "columns": ["id", "nombre", "categoria_id"],
+  "filters": [
+    { "column": "nombre", "op": "like", "value": "Cable%" },
+    { "column": "categoria_id", "op": "not_in", "value": ["cat-01", "cat-02", "cat-03"] }
+  ],
+  "limit": 20
+}

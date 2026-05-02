@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "ventas",
+  "columns": ["id", "monto", "fecha", "estado"],
+  "filters": [
+    { "column": "estado", "op": "!=", "value": "cancelada" },
+    { "column": "monto", "op": ">", "value": 1000 },
+    { "column": "fecha", "op": ">=", "value": "2026-01-01" },
+    { "column": "fecha", "op": "<=", "value": "2026-12-31" }
+  ],
+  "limit": 50
+}

@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "zod/v4": "npm:zod@4.4.2/v4"
+  },
+  "tasks": {
+    "test:contracts": "deno test --allow-read tests/"
+  }
+}

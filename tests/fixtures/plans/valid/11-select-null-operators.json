@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "operation": "select",
+  "table": "pedidos",
+  "columns": ["id", "cliente_id", "fecha_entrega"],
+  "filters": [
+    { "column": "fecha_entrega", "op": "is_null" },
+    { "column": "cliente_id", "op": "is_not_null" }
+  ],
+  "limit": 100
+}
