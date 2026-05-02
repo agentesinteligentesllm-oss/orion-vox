@@ -8,8 +8,6 @@
     { "column": "titulo", "op": "ilike", "value": "%urgente%" },
     { "column": "completada_en", "op": "is_null" }
   ],
-  "order_by": [
-    { "column": "creado_en", "dir": "asc" }
-  ],
+  "order_by": [{ "column": "creado_en", "dir": "asc" }],
   "limit": 50
 }

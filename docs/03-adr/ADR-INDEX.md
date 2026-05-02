@@ -36,6 +36,7 @@ línea de código.
 | ADR-010 | [Schema Summary autogenerado, no manual](./ADR-010-schema-autogeneration.md) | accepted | 2026-05-01 | M2 (M1 acepta deuda) |
 | ADR-011 | [Español como idioma primario](./ADR-011-spanish-as-primary-language.md) | accepted | 2026-05-01 | M1, M2, M3 |
 | ADR-012 | [Framework PWA — Svelte 5 + Vite + TypeScript](./ADR-012-framework-pwa.md) | accepted | 2026-05-01 | M1, M2, M3 |
+| ADR-013 | [Estrategia de esquema compartido Plan JSON entre PWA y Edge Functions](./ADR-013-shared-plan-schema-strategy.md) | accepted | 2026-05-01 | M1, M2, M3 |
 
 ---
 
@@ -73,7 +74,7 @@ línea de código.
 
 ## ADRs reservados a futuro (sin crear todavía)
 
-- **ADR-013+** — Reservados para decisiones que surjan durante M1/M2/M3.
+- **ADR-014+** — Reservados para decisiones que surjan durante M1/M2/M3.
 
 No se crean ADRs especulativos. Si una decisión no está sobre la mesa, no
 tiene ADR.

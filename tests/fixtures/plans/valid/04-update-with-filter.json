@@ -6,7 +6,5 @@
     "estado": "hecha",
     "completada_en": "2026-05-01T14:32:00Z"
   },
-  "filters": [
-    { "column": "id", "op": "=", "value": "abc-123" }
-  ]
+  "filters": [{ "column": "id", "op": "=", "value": "abc-123" }]
 }

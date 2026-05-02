@@ -10,8 +10,6 @@
       "on": { "left": "tareas.categoria_id", "right": "categorias.id" }
     }
   ],
-  "filters": [
-    { "column": "tareas.estado", "op": "=", "value": "activa" }
-  ],
+  "filters": [{ "column": "tareas.estado", "op": "=", "value": "activa" }],
   "limit": 100
 }

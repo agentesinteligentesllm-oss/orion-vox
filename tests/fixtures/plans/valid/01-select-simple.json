@@ -3,11 +3,7 @@
   "operation": "select",
   "table": "tareas",
   "columns": ["id", "titulo", "estado", "creado_en"],
-  "filters": [
-    { "column": "estado", "op": "=", "value": "activa" }
-  ],
-  "order_by": [
-    { "column": "creado_en", "dir": "desc" }
-  ],
+  "filters": [{ "column": "estado", "op": "=", "value": "activa" }],
+  "order_by": [{ "column": "creado_en", "dir": "desc" }],
   "limit": 100
 }

@@ -2,8 +2,6 @@
   "version": "1.0",
   "operation": "select",
   "table": "productos",
-  "filters": [
-    { "column": "activo", "op": "=", "value": true }
-  ],
+  "filters": [{ "column": "activo", "op": "=", "value": true }],
   "limit": 20
 }

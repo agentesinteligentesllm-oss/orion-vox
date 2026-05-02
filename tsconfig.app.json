@@ -6,6 +6,9 @@
     "module": "esnext",
     "types": ["svelte", "vite/client"],
     "noEmit": true,
+    "paths": {
+      "$shared/*": ["./supabase/functions/_shared/*"]
+    },
 
     /* Strict mode — ADR-012 */
     "strict": true,
@@ -21,5 +24,5 @@
     "checkJs": false,
     "moduleDetection": "force"
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "supabase/functions/_shared/**/*.ts"]
 }

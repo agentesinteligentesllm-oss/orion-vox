@@ -1,9 +1,15 @@
+import path from 'node:path';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      $shared: path.resolve('./supabase/functions/_shared'),
+    },
+  },
   plugins: [
     tailwindcss(),
     svelte(),
