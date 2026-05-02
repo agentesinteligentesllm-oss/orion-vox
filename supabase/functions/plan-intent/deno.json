@@ -1,5 +1,8 @@
 {
   "imports": {
-    "zod/v4": "npm:zod@4.4.2/v4"
+    "zod/v4": "npm:zod@4.4.2/v4",
+    "@google/genai": "npm:@google/genai@1.51.0",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.105.1",
+    "postgres": "npm:postgres@3.4.9"
   }
 }
