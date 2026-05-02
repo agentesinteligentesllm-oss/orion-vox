@@ -107,52 +107,38 @@ El output es markdown estructurado, optimizado para que Gemini lo parsee
 sin ambigüedad. Estructura canónica:
 
 ```markdown
-# Schema — base del usuario
-
-> Generado: 2026-05-01T14:32:00Z
-> Hash: sha256:a3f9...
-> Tablas: 7
+# Schema summary — public — generado 2026-05-01T14:32:00.000Z
 
 ## tareas
-
-Tareas personales del usuario.
-
-| Columna         | Tipo         | Nullable | Default     | Notas    |
-|-----------------|--------------|----------|-------------|----------|
-| **id**          | uuid         | NO       | gen_random_uuid() | PK |
-| titulo          | text         | NO       |             |          |
-| estado          | text         | YES      | 'activa'    | enum: activa, hecha, archivada |
-| categoria_id    | uuid         | YES      |             | FK → categorias.id |
-| creado_en       | timestamptz  | NO       | now()       |          |
-| actualizada_en  | timestamptz  | YES      |             |          |
+Comentario: Tareas personales del usuario.
+- id (uuid, pk, not null, default gen_random_uuid())
+- titulo (text, not null)
+- estado (text)
+- categoria_id (uuid) — FK → categorias.id
+- creado_en (timestamptz, not null, default now())
+- actualizada_en (timestamptz)
+FKs: categoria_id → categorias.id
+Indexes: idx_tareas_estado, idx_tareas_creado_en
 
 ## categorias
-
-Categorías para agrupar tareas.
-
-| Columna  | Tipo | Nullable | Default | Notas |
-|----------|------|----------|---------|-------|
-| **id**   | uuid | NO       | gen_random_uuid() | PK |
-| nombre   | text | NO       |         | UNIQUE |
-| color    | text | YES      |         |       |
-
-...
+- id (uuid, pk, not null, default gen_random_uuid())
+- nombre (text, not null)
+- color (text)
+FKs: ninguna
 ```
 
-**Reglas del formato.**
+**Reglas del formato.** (Formato autoritativo: `spec-schema-summary-edge.md §3.5`.)
 
-- Encabezado `# Schema` con metadata: timestamp, hash, conteo.
-- Cada tabla como `## nombre_tabla` (h2).
-- Comentario de tabla (de `obj_description`) como blockquote o párrafo
-  debajo del título.
-- Columnas en tabla markdown con: nombre, tipo, nullable, default,
-  notas.
-- **PK destacado** con `**negrita**` o columna "Notas" indicando "PK".
-- **FKs listadas** en columna "Notas" con flecha `FK → tabla.columna`.
-- Comentarios de columna (de `col_description`) en columna "Notas",
-  truncados a 60 chars.
+- Header H1: `# Schema summary — <schema> — generado <ISO 8601>`.
+- Una sección `## <tabla>` por tabla, orden alfabético.
+- Si la tabla tiene comment de Postgres: segunda línea `Comentario: <comment>`.
+- Bullet por columna: `- <nombre> (<tipo>[, pk][, not null][, default <expr>])[ — <anotación>]`.
+  - `<tipo>` usa `udt_name` de `information_schema` (e.g. `timestamptz`, no `timestamp with time zone`).
+  - Anotación: `column_comment` de Postgres tiene prioridad; si no hay, se muestra `FK → <tabla>.<col>` para columnas FK.
+- Línea `FKs: <lista>` (o `FKs: ninguna`) al final de cada tabla.
+- Línea `Indexes: <lista>` solo si hay índices no PK. Omitida si no hay.
+- Tablas `orion_audit` y con prefijo `_` excluidas siempre (denylist hardcoded).
 - Sin duplicación: cada tabla aparece una sola vez.
-- Orden alfabético de tablas para reproducibilidad.
 
 ---
 

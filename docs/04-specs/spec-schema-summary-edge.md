@@ -125,7 +125,13 @@ FKs: ninguna
 
 - Una sección `## <tabla>` por tabla.
 - Si la tabla tiene comment, segunda línea `Comentario: <comment>`.
-- Bullet por columna: `- <nombre> (<tipo>[, <pk>][, <not null>][, default <expr>])` + opcional ` — <comment>`.
+- Bullet por columna: `- <nombre> (<tipo>[, <pk>][, <not null>][, default <expr>])` + opcional ` — <anotación>`.
+  - El `<tipo>` usa `udt_name` de `information_schema.columns` (no `data_type`). Produce alias compactos
+    (`timestamptz` en lugar de `timestamp with time zone`) que reducen tokens en el system prompt de
+    Gemini sin perder información semántica.
+  - La `<anotación>` usa `column_comment` (de `col_description`) si existe. Si no, y la columna
+    es FK, muestra `FK → <ref_tabla>.<ref_col>`. Cuando ambos están presentes, **gana el comment**
+    (el usuario sabe mejor que la inferencia automática qué documentar; FK se omite del rendering).
 - Línea `FKs: <lista>` o `FKs: ninguna` al final de la tabla.
 - Línea `Indexes: <lista>` solo si hay índices no triviales (no PK).
 - Sin secciones para tablas excluidas.
