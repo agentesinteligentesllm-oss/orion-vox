@@ -1,5 +1,6 @@
 <script lang="ts">
 import Config from './components/Config.svelte';
+import VoiceScreen from './components/VoiceScreen.svelte';
 import { authStore } from './lib/auth-store.svelte.ts';
 import { router } from './lib/router.svelte.ts';
 
@@ -23,9 +24,5 @@ $effect(() => {
 {:else if router.mode === 'config'}
   <Config />
 {:else}
-  <!-- B3+: VoiceScreen.svelte goes here -->
-  <div class="flex min-h-dvh flex-col items-center justify-center bg-gray-950 text-gray-100">
-    <h1 class="text-4xl font-bold tracking-tight">Orion Vox</h1>
-    <p class="mt-2 text-gray-400">Listo para escucharte.</p>
-  </div>
+  <VoiceScreen />
 {/if}
