@@ -1,11 +1,14 @@
 <script lang="ts">
 import type { AuthError } from '@supabase/supabase-js';
+import { localStore } from '../lib/storage/local-store.ts';
+import type { Idioma } from '../lib/storage/types.ts';
 import { supabase } from '../lib/supabase.ts';
 import { validateEmail } from '../lib/utils.ts';
 
 type UiState = 'idle' | 'sending' | 'sent' | 'error';
 
 let email = $state('');
+let selectedIdioma = $state<Idioma>('es-MX');
 let uiState = $state<UiState>('idle');
 let errorMsg = $state('');
 
@@ -27,6 +30,7 @@ async function sendLink() {
     return;
   }
   uiState = 'sending';
+  await localStore.putSetting('idioma', selectedIdioma);
   const { error } = await supabase.auth.signInWithOtp({
     email: trimmed,
     options: { emailRedirectTo: window.location.origin },
@@ -79,6 +83,18 @@ async function sendLink() {
           autocomplete="email"
           class="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 placeholder-gray-600 focus:border-gray-500 focus:outline-none disabled:opacity-50"
         />
+
+        <label class="mb-1 block text-sm text-gray-400" for="idioma">Idioma de voz</label>
+        <select
+          id="idioma"
+          bind:value={selectedIdioma}
+          disabled={uiState === 'sending'}
+          class="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 focus:border-gray-500 focus:outline-none disabled:opacity-50"
+        >
+          <option value="es-MX">Español · México</option>
+          <option value="es-AR">Español · Argentina</option>
+          <option value="es-ES">Español · España</option>
+        </select>
 
         {#if uiState === 'error'}
           <p class="mb-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-300">

@@ -20,6 +20,7 @@
     "@tailwindcss/vite": "^4.2.4",
     "@tsconfig/svelte": "^5.0.8",
     "@types/node": "^24.12.2",
+    "fake-indexeddb": "^6.2.5",
     "svelte": "^5.55.4",
     "svelte-check": "^4.4.6",
     "tailwindcss": "^4.2.4",
@@ -31,6 +32,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.105.1",
+    "idb": "^8.0.3",
     "zod": "4.4.2"
   }
 }
