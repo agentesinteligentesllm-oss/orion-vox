@@ -16,13 +16,10 @@ class AuthState {
 
 export const authStore = new AuthState();
 
-// Fast hydration from persisted session
-supabase.auth.getSession().then(({ data }) => {
-  authStore.session = data.session;
-  authStore.loading = false;
-});
-
-// Subscribe to all future auth state changes (login, logout, token refresh)
+// onAuthStateChange is the single source of truth for auth state.
+// It fires INITIAL_SESSION after SDK initialization — including AFTER any PKCE code
+// exchange completes. This means loading stays true during the exchange, preventing
+// the route guard from incorrectly redirecting to login while the session is being established.
 supabase.auth.onAuthStateChange((_, session) => {
   authStore.session = session;
   authStore.loading = false;
