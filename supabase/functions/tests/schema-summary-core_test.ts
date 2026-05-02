@@ -102,17 +102,11 @@ Deno.test('[schema-summary-core] schema_hash is a 64-char hex string', async () 
   assertMatch(result.schema_hash, /^[0-9a-f]{64}$/, 'schema_hash hex64');
 });
 
-Deno.test('[schema-summary-core] is deterministic — same mock data produces same schema_hash', async () => {
-  const makeResult = () =>
-    getSchemaSummary(
-      makeMockSql({ tables: TAREAS_TABLES, cols: TAREAS_COLS, pks: TAREAS_PKS }),
-      ['tareas'],
-      'public',
-    );
-  const r1 = await makeResult();
-  const r2 = await makeResult();
-  assertEqual(r1.schema_hash, r2.schema_hash, 'hash deterministic');
-  assertEqual(r1.markdown, r2.markdown, 'markdown deterministic');
+Deno.test('[schema-summary-core] schema_hash is sha256 of the markdown (hash is deterministic function of content)', async () => {
+  const sql = makeMockSql({ tables: TAREAS_TABLES, cols: TAREAS_COLS, pks: TAREAS_PKS });
+  const result = await getSchemaSummary(sql, ['tareas'], 'public');
+  const expected = await sha256hex(result.markdown);
+  assertEqual(result.schema_hash, expected, 'schema_hash === sha256(markdown)');
 });
 
 Deno.test('[schema-summary-core] filters orion_audit from allowedTables (hardcoded denylist)', async () => {

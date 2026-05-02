@@ -84,17 +84,11 @@ describe('getSchemaSummary', () => {
     expect(result.schema_hash).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('is deterministic — same mock data produces same schema_hash', async () => {
-    const makeResult = () =>
-      getSchemaSummary(
-        makeMockSql({ tables: TAREAS_TABLES, cols: TAREAS_COLS, pks: TAREAS_PKS }),
-        ['tareas'],
-        'public',
-      );
-    const r1 = await makeResult();
-    const r2 = await makeResult();
-    expect(r1.schema_hash).toBe(r2.schema_hash);
-    expect(r1.markdown).toBe(r2.markdown);
+  it('schema_hash is sha256 of the markdown (hash is deterministic function of content)', async () => {
+    const sql = makeMockSql({ tables: TAREAS_TABLES, cols: TAREAS_COLS, pks: TAREAS_PKS });
+    const result = await getSchemaSummary(sql, ['tareas'], 'public');
+    const expected = await sha256hex(result.markdown);
+    expect(result.schema_hash).toBe(expected);
   });
 
   it('filters orion_audit from allowedTables (hardcoded denylist)', async () => {
