@@ -1,5 +1,6 @@
 <script lang="ts">
 import { authStore } from '../lib/auth-store.svelte.ts';
+import { performLogout } from '../lib/logout.ts';
 import { localStore } from '../lib/storage/local-store.ts';
 import type { Idioma, SchemaCacheEntry } from '../lib/storage/types.ts';
 
@@ -9,6 +10,8 @@ let dryRun = $state(false);
 let doubleConfirmDelete = $state(true);
 let doubleConfirmUpdateNoFilter = $state(true);
 let schemaCache = $state<SchemaCacheEntry | null>(null);
+let showConfirm = $state(false);
+let loggingOut = $state(false);
 
 $effect(() => {
   Promise.all([
@@ -43,6 +46,11 @@ function previewTTS() {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+async function doLogout() {
+  loggingOut = true;
+  await performLogout();
 }
 </script>
 
@@ -168,5 +176,48 @@ function formatDate(iso: string): string {
         Refrescar schema (disponible en T1.6)
       </button>
     </section>
+    <!-- Zona peligrosa -->
+    <section class="rounded-xl border border-red-900/40 bg-gray-900 p-4">
+      <h2 class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Zona peligrosa</h2>
+      <button
+        type="button"
+        onclick={() => {
+          showConfirm = true;
+        }}
+        class="w-full rounded-lg border border-red-800 bg-red-950/40 px-3 py-2 text-sm text-red-400 hover:bg-red-900/50 active:bg-red-900/70"
+      >
+        Cerrar sesión y borrar caché local
+      </button>
+    </section>
   </main>
 </div>
+
+{#if showConfirm}
+  <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
+    <div class="w-full max-w-sm rounded-t-2xl border border-gray-700 bg-gray-900 p-6 sm:rounded-2xl">
+      <p class="text-sm text-gray-200">
+        Esto cierra sesión y borra el caché local de schema y auditoría. ¿Seguro?
+      </p>
+      <div class="mt-5 flex gap-3">
+        <button
+          type="button"
+          onclick={() => {
+            showConfirm = false;
+          }}
+          disabled={loggingOut}
+          class="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onclick={doLogout}
+          disabled={loggingOut}
+          class="flex-1 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+        >
+          {loggingOut ? 'Cerrando…' : 'Cerrar sesión'}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
