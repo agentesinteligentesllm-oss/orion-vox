@@ -54,7 +54,7 @@ $effect(() => {
 $effect(() => {
   if (router.mode !== 'voice') return;
   if (!authStore.session) return;
-  if (!('permissions' in navigator)) return;
+  if (!navigator.permissions) return;
 
   navigator.permissions
     .query({ name: 'microphone' as PermissionName })
