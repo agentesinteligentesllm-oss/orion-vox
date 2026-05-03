@@ -15,6 +15,7 @@ import {
   type VoiceInputState,
 } from '../lib/voice/recognition.ts';
 import { TtsOutputController } from '../lib/voice/synthesis.ts';
+import PlanPreview from './PlanPreview.svelte';
 
 const recognition = new VoiceInputController();
 const tts = new TtsOutputController();
@@ -259,17 +260,10 @@ function goToSettings() {
       </div>
     {/if}
 
-    <!-- Respuesta del plan (B4.2 — B4.3 reemplaza el interior con PlanPreview.svelte) -->
+    <!-- Respuesta del plan -->
     {#if planResponse && voiceState === 'idle'}
       {#if planResponse.kind === 'plan'}
-        <div class="w-full max-w-sm rounded-xl border border-indigo-900 bg-indigo-950/30 px-4 py-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-indigo-400">
-            {planResponse.plan.operation}
-            <span class="mx-1 text-indigo-600" aria-hidden="true">→</span>
-            {planResponse.plan.table}
-          </p>
-          <p class="mt-1 text-xs text-gray-500">Plan recibido. Confirmación pendiente.</p>
-        </div>
+        <PlanPreview plan={planResponse.plan} />
       {:else}
         <div class="w-full max-w-sm rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3">
           <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-400">Necesito más información</p>
