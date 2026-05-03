@@ -34,14 +34,15 @@ related:
   sirve de puente entre Gemini (Android) y un proyecto Supabase del
   director, usando voz natural en español. Cubot KingKong 9 es el
   dispositivo target.
-- **Avance M1**: ~55% (B0-B3 done, B4.1 done sin commit, B4.2-B4.5
+- **Avance M1**: ~57% (B0-B3 done, B4.1/T3.1 done, B4.2-B4.5
   pendientes, B5-B8 pendientes).
-- **Próxima acción concreta**: el director decide si commitear el
-  trabajo no commiteado de T3.1 (B4.1) y arrancar B4.2.
+- **Próxima acción concreta**: arrancar B4.2 (VoiceScreen integration
+  con plan-intent + loading state). Ver § 3.
 - **Decisiones B4 resueltas**: las 4 divergencias detectadas en pre-read
   ya están cerradas en
   [`05-implementation/B4-PENDING-DECISIONS.md`](./05-implementation/B4-PENDING-DECISIONS.md).
-- **Working tree NO limpio**: hay cambios pendientes. Ver § 5.
+- **Working tree LIMPIO** al cierre de B4.1 (commit `d1e8a94`). Verificar
+  con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
   (ver § 8).
 
@@ -56,69 +57,62 @@ related:
 | **B2** | PWA Auth + Config + IndexedDB + Logout + tests E2E | ✅ done | `138f4e3` |
 | **B3** | PWA Voice (recognition + synthesis wrappers + VoiceScreen + auto-listen + keyboard fallback) | ✅ done | `5ebb458` |
 | **Wave 4** | Sync de docs post B0-B3 (no es bloque de implementación) | ✅ done | `91b3bb1` |
-| **B4** | Plan-Intent integration cliente | 🔄 EN CURSO — B4.1/T3.1 implementado SIN COMMIT, B4.2-B4.5 pendientes | — |
+| **B4.1 / T3.1** | Plan-Intent client (`src/lib/api/plan-intent-client.ts` + tests + audit fixes ES + Biome format) | ✅ done | `d1e8a94` |
+| **Wave 5** | HANDOFF reescrito a prueba de fallos + .gitignore protección credenciales | ✅ done | `bbcab81` |
+| **B4.2-B4.5** | VoiceScreen integration + PlanPreview + Clarification flow + E2E | 🔲 pendiente | — |
 | **B5** | Confirmation Modal flow | 🔲 pendiente | — |
 | **B6** | Execute & Audit cliente | 🔲 pendiente | — |
 | **B7** | Atajos Android + Instalación PWA | 🔲 pendiente | — |
 | **B8** | Deploy + Smoke E2E Cubot KK9 | 🔲 pendiente | — |
 
-**Tests al cierre Wave 4**: 168/168 Vitest verde + 66/66 Deno verde
-(último confirmado en `c07b235`). Tests de B4.1 (`plan-intent-client.test.ts`)
-agregan más, pero no se contaron en el último commit verificado.
+**Tests al cierre B4.1**: 176/176 Vitest verde (168 previos + 8 nuevos
+del cliente plan-intent). Deno tests no re-verificados desde `c07b235`
+(re-verificación obligatoria pre-deploy en B8).
 
 ---
 
 ## 3. Próximo paso EXACTO
 
-### Opción A — Cerrar T3.1 con commit y seguir B4.2 (recomendado)
+### Pre-flight obligatorio antes de tocar código
 
-1. Verificar que el working tree (§ 5) refleje exactamente T3.1 sin
-   trabajo de otros bloques mezclado.
-2. Correr gates verde: `npm run check` + `npm run lint` +
-   `npm run test:contracts` (Vitest + Deno).
-3. Commit dedicado:
-   ```
-   B4.1: plan-intent-client + tests + spec sync (PROMPT-ENG, B4-PENDING, HANDOFF)
+1. **Verificar working tree limpio**: `git status` debe decir
+   "nothing to commit, working tree clean". Si hay cambios pendientes,
+   pausar y reportar al director — pueden ser de otra sesión cruzada.
+2. **Verificar último commit**: `git log --oneline -5` debe mostrar
+   `d1e8a94` (B4.1) y `bbcab81` (Wave 5 docs sync) como recientes.
+3. **Releer specs B4.2-B4.5** ANTES de codear:
+   - `docs/04-specs/spec-plan-intent-edge.md` (response shapes)
+   - `docs/02-architecture/DATA-FLOW.md` (flow READ y WRITE)
+   - `docs/04-specs/spec-tts-output.md` (TTS para clarification)
+   - `docs/04-specs/spec-voice-input.md` (cómo VoiceScreen ya emite eventos)
+4. Si hay divergencia spec → pausar y reportar al director ANTES de
+   improvisar.
 
-   - src/lib/api/plan-intent-client.ts: HTTP client con JWT Bearer,
-     11 error codes (PlanIntentClientError + PlanIntentServerErrorCode),
-     manejo de schema_hash (cache invalidation + X-Refresh-Schema),
-     onUnauthorized callback para redirect a login.
-   - tests/unit/plan-intent-client.test.ts: tests con mock fetch.
-   - supabase/functions/plan-intent/index.ts: ajustes menores spec.
-   - docs/02-architecture/PROMPT-ENGINEERING.md: formato concat
-     clarification documentado (Decisión 3 de B4-PENDING-DECISIONS).
-   - docs/05-implementation/B4-PENDING-DECISIONS.md: decisiones marcadas [x].
-   - openspec/changes/m1-mvp/{state.yaml,tasks.md}: T3.1 done.
-   - .gitignore: proteger datos sensibles del director.
-
-   Decisiones B4 (consenso director+Claude 2026-05-03):
-   - #1 schema_stale: opción (a) cliente detecta hash distinto + X-Refresh-Schema header
-   - #2 gemini_unavailable (502) + gemini_timeout (504) separados
-   - #3 concat clarificación: ${prompt}\n\nAclaración del usuario: ${respuesta}
-   - #4 conversation_id: ignorado (M2)
-
-   Ref: B4-PENDING-DECISIONS.md, ADR-013, spec-plan-intent-edge.md.
-   ```
-4. Reportar al director: hash + gates verde + actualización HANDOFF
-   marcando B4.1 done.
-
-### Opción B — Si el director prefiere revisar antes de commitear
-
-Pedir al director que revise el diff completo (`git diff HEAD` +
-contenido de `src/lib/api/plan-intent-client.ts` y
-`tests/unit/plan-intent-client.test.ts`). NO commitear sin su
-autorización explícita (regla constitucional: el director es el
-único que aprueba commits con cambios de scope cliente↔server).
-
-### Después del commit (B4.2)
+### Sub-bloques B4.2-B4.5 con commits separados
 
 | Sub-bloque | Scope | Commit sugerido |
 |------------|-------|-----------------|
-| B4.2 | VoiceScreen → plan-intent integration: dispatch post-recognition + loading state visual | `B4.2: VoiceScreen dispara plan-intent con loading state` |
-| B4.3 | `PlanPreview.svelte`: render legible NO técnico del Plan JSON | `B4.3: PlanPreview component` |
-| B4.4 | Clarification flow: TTS lee pregunta + auto-restart recognition + concat aprobado | `B4.4: clarification flow con TTS + re-listen` |
-| B4.5 | Tests E2E del flow completo voice → plan-intent → preview / clarification | `B4.5: tests E2E B4` |
+| B4.2 | VoiceScreen → plan-intent integration: dispatch post-recognition + loading state visual + manejo de errores 11 códigos | `B4.2: VoiceScreen dispara plan-intent con loading state` |
+| B4.3 | `PlanPreview.svelte`: render legible NO técnico del Plan JSON (ej: "Voy a buscar 5 ventas con fecha de hoy") | `B4.3: PlanPreview component human-readable` |
+| B4.4 | Clarification flow: TTS lee pregunta + auto-restart recognition + concat aprobado (`${prompt}\n\nAclaración del usuario: ${respuesta}`) | `B4.4: clarification flow con TTS + re-listen` |
+| B4.5 | Tests E2E del flow completo voice → plan-intent → preview / clarification (mock fetch + mock SpeechRecognition) | `B4.5: tests E2E B4 voice→plan-intent` |
+
+**Reglas duras**:
+- JWT extraído de `auth.session.access_token` actual. Si null → redirect login.
+- Schema hash: la PWA cachea en IndexedDB store `schema_cache`. Si en respuesta llega hash distinto → invalidar + flag `X-Refresh-Schema: 1` en próxima request (ya implementado en `plan-intent-client.ts`).
+- Errors 401 → redirect login. 403 → mensaje "no autorizado". 502 `gemini_unavailable` → "Gemini no disponible, intentá de nuevo". 504 `gemini_timeout` → "Gemini tardó mucho, intentá de nuevo". 500 → genérico.
+- Loading state visual durante el fetch (1-3s típico por Gemini). Sin loading state es UX horrible.
+- B4 NO ejecuta plan. Solo recibe Plan y previsualiza. Ejecución es B6.
+- Cualquier divergencia detectada → pausar y reportar.
+
+**Reportar al director**:
+- Después de B4.2 (primer hito: VoiceScreen conectado con flow básico).
+- Después de B4.5 (B4 cerrado completo).
+- Cada reporte termina con check explícito: "Verificaciones pendientes
+  del round anterior: [todas cerradas / X pendientes]".
+
+**Recordatorio**: actualizar este HANDOFF.md al cerrar B4 antes del
+próximo bloque (ver § 18).
 
 ---
 
@@ -138,24 +132,29 @@ Resumen:
 
 ---
 
-## 5. Working tree NO limpio (al 2026-05-03)
+## 5. Working tree LIMPIO (verificación obligatoria al abrir sesión)
 
-Cambios pendientes de commit (parte de T3.1, sin commit todavía):
+Estado al cierre de Wave 5 + B4.1: **working tree limpio, todo commiteado**.
 
+Verificar siempre al abrir sesión:
+
+```bash
+git status         # debe decir: nothing to commit, working tree clean
+git log --oneline -5
+# debe mostrar (más recientes primero):
+#   bbcab81 Wave 5: HANDOFF reescrito + .gitignore
+#   d1e8a94 B4.1: plan-intent client + validación post-handoff
+#   91b3bb1 Wave 4: docs sync para handoff a Codex 5.5
+#   5ebb458 B3.6: VoiceScreen E2E tests
+#   d7f56bf B3.4: auto-listen guards
 ```
-M  .gitignore                                         (este HANDOFF + protección datos sensibles)
-M  docs/02-architecture/PROMPT-ENGINEERING.md         (formato concat clarification)
-M  docs/05-implementation/B4-PENDING-DECISIONS.md     (decisiones marcadas [x])
-M  docs/HANDOFF.md                                    (este documento, reescrito 2026-05-03)
-M  openspec/changes/m1-mvp/state.yaml                 (current_block + last_updated)
-M  openspec/changes/m1-mvp/tasks.md                   (T3.1 marcada [x])
-M  supabase/functions/plan-intent/index.ts            (ajustes menores)
-?? src/lib/api/                                       (plan-intent-client.ts + posible index.ts)
-?? tests/unit/plan-intent-client.test.ts              (tests del client)
-```
 
-**Acción**: el director revisa el diff y autoriza commit (Opción A
-del § 3).
+Si el working tree NO está limpio, alguien dejó trabajo en curso.
+Pausar y reportar al director antes de tocar nada.
+
+**Archivo `datos de suapabase`**: existe localmente con credenciales
+del director. Está protegido por `.gitignore` (entrada agregada en
+Wave 5). Debe NUNCA aparecer en `git status` como untracked.
 
 ---
 
@@ -182,7 +181,7 @@ src/
     ├── contracts/
     │   └── plan-schema.ts           — barrel re-export desde $shared (B1, ADR-013)
     └── api/
-        └── plan-intent-client.ts    — HTTP client plan-intent (B4.1) 🔄 sin commit
+        └── plan-intent-client.ts    — HTTP client plan-intent (B4.1) ✅ d1e8a94
 
 supabase/
 ├── functions/
@@ -193,7 +192,7 @@ supabase/
 │   │   ├── schema-summary-core.ts   — lógica pura schema (B1) ✅
 │   │   ├── audit.ts                 — helpers audit (B1) ✅
 │   │   └── retries.ts               — backoff helpers (B1) ✅
-│   ├── plan-intent/index.ts         — Edge Function (B1) ✅ (modif. menor sin commit)
+│   ├── plan-intent/index.ts         — Edge Function (B1) ✅
 │   ├── execute-plan/index.ts        — Edge Function (B1) ✅
 │   ├── schema-summary/index.ts      — Edge Function (B1) ✅
 │   ├── tests/                       — deno test suites (B1) ✅
@@ -206,7 +205,7 @@ tests/
 ├── unit/
 │   ├── recognition.test.ts          — 14 tests VoiceInputController (B3) ✅
 │   ├── synthesis.test.ts            — 16 tests TtsOutputController (B3) ✅
-│   └── plan-intent-client.test.ts   — tests del client (B4.1) 🔄 sin commit
+│   └── plan-intent-client.test.ts   — tests del client (B4.1) ✅ d1e8a94
 ├── e2e/
 │   ├── b2-auth-config.test.ts       — flows auth, config, logout (B2) ✅
 │   └── b3-voice-screen.test.ts      — 8 tests VoiceScreen UI (B3) ✅
@@ -264,7 +263,7 @@ ejecutable: `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 | R-02 | Magic link callback no probado contra Supabase real | Depende del director (T1.1, T1.2). Smoke en B6/B8 cuando exista proyecto Supabase. | Pre-B8 |
 | R-03 | Web Speech + TTS en Cubot KK9 no probado | Smoke E2E B8 en hardware real. Si falla: fallback teclado + lectura visual ya soportado. | B8 |
 | R-04 | Plan inválido del LLM sin retry inteligente (TD-008) | Documentado, retry con reprompting postergado a M2. | M2 |
-| R-05 | `datos de suapabase` (archivo del director con credenciales) | Agregado a `.gitignore`. Verificar que NUNCA aparezca en `git status`. | Verificar tras este HANDOFF |
+| R-05 | `datos de suapabase` (archivo del director con credenciales) | ✅ Cerrado en Wave 5 — protegido por `.gitignore`. Verificar periódicamente con `git status` que no aparezca. | Cerrado 2026-05-03 |
 
 ---
 
@@ -506,4 +505,4 @@ confiable entre sesiones.**
 | Wave 2 | Roadmap M1/M2/M3 reformulado (ADR-009 reescrito) | 2026-05-01 | varios |
 | Wave 3 | Auditoría final + CLAUDE.md actualizado | 2026-05-01 | varios |
 | Wave 4 | Docs sync post B0-B3 + B4 pending decisions formalizadas | 2026-05-02 | `91b3bb1` |
-| Wave 5 | HANDOFF reescrito a prueba de fallos + .gitignore protegido | 2026-05-03 | (este) |
+| Wave 5 | HANDOFF reescrito a prueba de fallos + .gitignore protegido (cierra R-05); seguido por commit `d1e8a94` (B4.1 plan-intent client de sesión cruzada con Codex 5.5) | 2026-05-03 | `bbcab81` |
