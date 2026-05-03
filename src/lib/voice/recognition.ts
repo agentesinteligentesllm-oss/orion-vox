@@ -57,7 +57,8 @@ export class VoiceInputController {
 
     r.onresult = (ev: SpeechRecognitionEvent) => {
       const result = ev.results[ev.results.length - 1];
-      const text = result[0].transcript.trim();
+      if (!result) return;
+      const text = result[0]?.transcript.trim() ?? '';
       if (result.isFinal) {
         this._setState('processing');
         this._emit('result', text);
