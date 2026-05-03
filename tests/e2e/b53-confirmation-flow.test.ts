@@ -69,10 +69,37 @@ vi.mock('../../src/lib/api/plan-intent-client.ts', () => {
   };
 });
 
-vi.mock('../../src/lib/api/execute-plan-client.ts', () => ({
-  auditCancel: vi.fn(),
-  EXECUTE_PLAN_CLIENT_VERSION: '0.0.0',
-}));
+vi.mock('../../src/lib/api/execute-plan-client.ts', () => {
+  class ExecutePlanClientError extends Error {
+    code: string;
+    messageEs: string;
+    details?: unknown;
+    auditId?: string;
+    constructor(init: { code: string; messageEs?: string; details?: unknown; auditId?: string }) {
+      const msg = init.messageEs ?? init.code;
+      super(msg);
+      this.name = 'ExecutePlanClientError';
+      this.code = init.code;
+      this.messageEs = msg;
+      this.details = init.details;
+      this.auditId = init.auditId;
+    }
+  }
+  return {
+    auditCancel: vi.fn(),
+    executePlan: vi.fn().mockResolvedValue({
+      ok: true,
+      result: null,
+      rows_affected: 1,
+      audit_id: 'mock-execute-audit-id',
+      sql_preview: null,
+      duration_ms: 50,
+    }),
+    ExecutePlanClientError,
+    EXECUTE_PLAN_CLIENT_VERSION: '0.0.0',
+    EXECUTE_PLAN_ERROR_MESSAGES: {},
+  };
+});
 
 vi.mock('../../src/lib/storage/local-store.ts', () => ({
   localStore: {

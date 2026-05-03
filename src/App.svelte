@@ -1,4 +1,5 @@
 <script lang="ts">
+import AuditView from './components/AuditView.svelte';
 import Config from './components/Config.svelte';
 import VoiceScreen from './components/VoiceScreen.svelte';
 import { authStore } from './lib/auth-store.svelte.ts';
@@ -23,6 +24,8 @@ $effect(() => {
   </div>
 {:else if router.mode === 'config'}
   <Config />
+{:else if router.mode === 'audit'}
+  <AuditView />
 {:else}
   <VoiceScreen />
 {/if}

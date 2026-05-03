@@ -1,4 +1,4 @@
-export type Mode = 'voice' | 'config';
+export type Mode = 'voice' | 'config' | 'audit';
 
 /** Pure parser — no DOM access, safe in tests and SSR. */
 export function parseMode(search: string): { mode: Mode; firstTime: boolean } {
@@ -7,8 +7,9 @@ export function parseMode(search: string): { mode: Mode; firstTime: boolean } {
   // SDK exchanges the code and fires onAuthStateChange; route guard handles redirect.
   if (params.has('code')) return { mode: 'voice', firstTime: false };
   const m = params.get('mode');
+  const mode: Mode = m === 'config' ? 'config' : m === 'audit' ? 'audit' : 'voice';
   return {
-    mode: m === 'config' ? 'config' : 'voice',
+    mode,
     firstTime: params.get('first') === 'true',
   };
 }

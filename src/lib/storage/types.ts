@@ -13,6 +13,9 @@ export interface AuditMirrorEntry {
   user_prompt: string;
   plan_json: unknown;
   error: string | null;
+  rows_affected?: number;
+  result_summary?: string;
+  server_audit_id?: string;
 }
 
 export interface LocalStorageAPI {
