@@ -1,4 +1,5 @@
 <script lang="ts">
+import { auditCancel } from '../lib/api/execute-plan-client.ts';
 import {
   buildClarifiedPrompt,
   PlanIntentClientError,
@@ -7,6 +8,13 @@ import {
 } from '../lib/api/plan-intent-client.ts';
 import { planIntentErrorToMessage } from '../lib/api/plan-intent-messages.ts';
 import { authStore } from '../lib/auth-store.svelte.ts';
+import {
+  buildSqlPreview,
+  buildWarnings,
+  requiresDoubleConfirm,
+  shouldConfirm,
+  type UserConfirmSettings,
+} from '../lib/confirmation-utils.ts';
 import { router } from '../lib/router.svelte.ts';
 import { localStore } from '../lib/storage/local-store.ts';
 import type { Idioma } from '../lib/storage/types.ts';
@@ -16,6 +24,7 @@ import {
   type VoiceInputState,
 } from '../lib/voice/recognition.ts';
 import { TtsOutputController } from '../lib/voice/synthesis.ts';
+import ConfirmationModal from './ConfirmationModal.svelte';
 import PlanPreview from './PlanPreview.svelte';
 
 const recognition = new VoiceInputController();
@@ -32,6 +41,10 @@ let planResponse = $state<PlanIntentResponse | null>(null);
 let planError = $state<string | null>(null);
 let clarificationOriginalPrompt = $state<string | null>(null);
 let awaitingClarificationListen = $state(false);
+let confirmSettings = $state<UserConfirmSettings>({
+  doubleConfirmDelete: true,
+  doubleConfirmUpdateNoFilter: true,
+});
 
 recognition.on('state', (s) => {
   voiceState = s;
@@ -103,6 +116,14 @@ async function callPlanIntent(text: string): Promise<void> {
         router.navigate('config', { firstTime: true });
       },
     });
+    if (response.kind === 'plan' && shouldConfirm(response.plan)) {
+      const [dcd, dcu] = await Promise.all([
+        localStore.getSetting<boolean>('doubleConfirmDelete'),
+        localStore.getSetting<boolean>('doubleConfirmUpdateNoFilter'),
+      ]);
+      if (dcd !== null) confirmSettings.doubleConfirmDelete = dcd;
+      if (dcu !== null) confirmSettings.doubleConfirmUpdateNoFilter = dcu;
+    }
     planResponse = response;
     if (response.kind === 'clarification') {
       clarificationOriginalPrompt = text;
@@ -190,6 +211,28 @@ async function handleKeyboardSubmit(e: SubmitEvent) {
   keyboardInput = '';
   lastResult = text;
   await callPlanIntent(text);
+}
+
+function handleConfirmed(): void {
+  // B6 conectará la llamada real a execute-plan aquí
+  planResponse = null;
+  planError = null;
+}
+
+function handleModalCancel(): void {
+  if (planResponse?.kind !== 'plan') {
+    planResponse = null;
+    return;
+  }
+  const token = authStore.session?.access_token;
+  if (token) {
+    auditCancel(planResponse.plan, token, {
+      userPrompt: lastResult,
+      schemaHash: planResponse.schema_hash,
+    });
+  }
+  planResponse = null;
+  planError = null;
 }
 
 function goToSettings() {
@@ -303,7 +346,18 @@ function goToSettings() {
     <!-- Respuesta del plan — la card de clarificación persiste también durante re-listen -->
     {#if planResponse && (voiceState === 'idle' || clarificationOriginalPrompt !== null)}
       {#if planResponse.kind === 'plan'}
-        <PlanPreview plan={planResponse.plan} />
+        {#if shouldConfirm(planResponse.plan)}
+          <ConfirmationModal
+            plan={planResponse.plan}
+            sqlPreview={buildSqlPreview(planResponse.plan)}
+            warnings={buildWarnings(planResponse.plan)}
+            requiresDouble={requiresDoubleConfirm(planResponse.plan, confirmSettings)}
+            onConfirm={handleConfirmed}
+            onCancel={handleModalCancel}
+          />
+        {:else}
+          <PlanPreview plan={planResponse.plan} />
+        {/if}
       {:else}
         <div class="w-full max-w-sm rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3">
           <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-400">Necesito más información</p>
