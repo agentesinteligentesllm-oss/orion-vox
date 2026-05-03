@@ -4,7 +4,7 @@ change-id: m1-mvp
 change-status: in-progress
 target-milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-01
+last-reviewed: 2026-05-03
 supersedes: []
 related:
   - ./proposal.md
@@ -156,17 +156,28 @@ se complete y se valide.
   ✅ 2026-05-03 (`plan-intent-client.ts`, errores spec, refresh de
   schema en siguiente llamada, handler 401 para routing/login en
   integración UI)
-- [ ] **T3.2** — Manejo de respuesta Plan vs Clarification: si es
+- [x] **T3.2** — Manejo de respuesta Plan vs Clarification: si es
   Clarification, mostrar pregunta al usuario y reenviar refinada.
   *Aceptación*: frase ambigua ("borra eso") muestra pregunta de
   clarificación en pantalla y/o TTS.
-  [PAUSADO]
-- [ ] **T3.3** — Validador Plan JSON cliente (Zod) usando el módulo
+  ✅ 2026-05-03 — implementado en tres sub-bloques:
+  - **B4.2** `b959081`: `VoiceScreen.svelte` integra `callPlanIntent()`,
+    loading state, card de resultado/clarificación, 14 mensajes de error ES.
+  - **B4.3** `e5bb9ff`: `PlanPreview.svelte` — render legible humano del
+    Plan JSON (frase por operación + aviso confirmación writes).
+  - **B4.4** `ae1ce17`: clarification flow completo — `tts.speak(question)`
+    + `tts.on('end')` auto-restart recognition + `buildClarifiedPrompt()`
+    + re-envío a `callPlanIntent`. 10 tests unit.
+  - **B4.5** 🔲 pendiente: tests E2E del flow completo (ver HANDOFF.md §3).
+- [x] **T3.3** — Validador Plan JSON cliente (Zod) usando el módulo
   compartido `src/lib/contracts/plan-schema.ts` (barrel → `$shared`; ADR-013).
   *Aceptación*: Plan inválido recibido del server se rechaza
   client-side con código de error específico antes de mostrar al
   usuario.
-  [PAUSADO]
+  ✅ 2026-05-03 — implementado en `plan-intent-client.ts` (`d1e8a94`):
+  la respuesta de la Edge se valida contra el schema Zod; Plan inválido
+  lanza `PlanIntentClientError({ code: 'invalid_response' })` antes de
+  retornar al componente.
 
 ---
 

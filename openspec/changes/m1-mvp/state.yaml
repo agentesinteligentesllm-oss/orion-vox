@@ -11,8 +11,12 @@ completed_blocks:
   - B1  # c07b235 — Supabase backend (código completo; deploy pendiente en B8)
   - B2  # 138f4e3 — PWA Auth & Config (auth store, routing, settings, logout)
   - B3-voice  # 5ebb458 — Voice (VoiceInputController, TtsOutputController, VoiceScreen)
-current_block: B3-plan-intent-in-progress  # T3.1 client done; T3.2/T3.3 pending
-next_block: B5  # tras resolver B3-plan-intent
+  - B4.1  # d1e8a94 — plan-intent-client.ts + tests + audit fixes ES + Biome
+  - B4.2  # b959081 — VoiceScreen integra plan-intent (loading, cards, 14 error msgs)
+  - B4.3  # e5bb9ff — PlanPreview.svelte (render legible humano) + 10 tests unit
+  - B4.4  # ae1ce17 — clarification flow (TTS + re-listen + buildClarifiedPrompt) + 10 tests
+current_block: B4.5-e2e-tests-pending  # E2E del flow completo B4 (ver HANDOFF.md §3)
+next_block: B5  # tras cerrar B4.5
 artifacts:
   proposal: proposal.md
   spec: spec.md
@@ -45,18 +49,24 @@ related_adrs:
   - ADR-012  # framework PWA Svelte 5 + Vite + TS (creado Wave 1)
   - ADR-013  # shared plan-schema entre PWA y Deno sin monorepo (B1)
 notes: |
-  Wave 4 (2026-05-02): docs sync para handoff a Codex 5.5.
+  Wave 8 (2026-05-03): B4.4 commiteado + docs sincronizados.
 
-  B0-B3 completos: 168/168 Vitest verde. TypeScript limpio. Biome 0 errores.
+  B0-B4.4 completos: 208/208 Vitest verde. TypeScript limpio (check 0 errores).
+  Biome 0 errores. Gates todos verdes.
 
-  Orden real de implementación: B0→B1→B2→B4-Voice(como B3)→pausa.
-  B3-Plan-Intent desbloqueado por directiva del director. T3.1
-  implementa el cliente plan-intent; T3.2/T3.3 siguen pendientes.
-  Ver: docs/05-implementation/B4-PENDING-DECISIONS.md
-  Ver: docs/HANDOFF.md (documento de traspaso para Codex 5.5)
+  Orden real de implementación: B0→B1→B2→B4-Voice(como B3)→B4.1→B4.2→B4.3→B4.4.
+  T3.2 y T3.3 completados en B4.2+B4.3+B4.4 (ver tasks.md para detalle).
+  Pendiente B4.5: tests E2E del flow completo (ver HANDOFF.md §3).
 
   Riesgo documentado: deno test de Edge Functions no re-verificado
   localmente desde T1.6. Re-verificación obligatoria en B8 pre-deploy.
-  Supabase/functions/ sin cambios en B2-B3 (riesgo bajo).
+  Supabase/functions/ sin cambios en B2-B4 (riesgo bajo).
 
   Deuda activa M1→M2: TD-001-bis, TD-003, TD-004, TD-005, TD-008.
+
+  Gotchas críticos B4.4 (importantes para B4.5):
+  - tts.cancel() emite onerror con code:'interrupted', NO onend.
+  - recognition.resetToIdle() es no-op en el mock (vi.fn) → emitir
+    manualmente emit(rec,'state','idle') en tests cuando sea necesario.
+  - toBeDisabled() no disponible (sin jest-dom) → usar .disabled === false.
+  - Mock TTS necesita _handlers map (patrón b44), no on=vi.fn() de b3.

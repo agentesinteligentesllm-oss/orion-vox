@@ -3,7 +3,7 @@ title: HANDOFF — Documento maestro de orquestación
 status: stable
 milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-03 (B4.3)
+last-reviewed: 2026-05-03 (B4.4 + Wave 8)
 purpose: |
   Único documento de entrada para cualquier sesión nueva (Claude o
   Codex) que retome el proyecto. Se actualiza al cierre de cada bloque
@@ -34,18 +34,17 @@ related:
   sirve de puente entre Gemini (Android) y un proyecto Supabase del
   director, usando voz natural en español. Cubot KingKong 9 es el
   dispositivo target.
-- **Avance M1**: ~65% (B0-B3 done, B4.1+B4.2+B4.3 done, B4.4-B4.5
-  pendientes, B5-B8 pendientes).
-- **Próxima acción concreta**: arrancar B4.4 (clarification flow — TTS
-  lee pregunta + auto-restart recognition + `buildClarifiedPrompt()`).
-  Ver § 3.
+- **Avance M1**: ~72% (B0-B3 done, B4.1+B4.2+B4.3+B4.4 done, B4.5
+  pendiente, B5-B8 pendientes).
+- **Próxima acción concreta**: arrancar B4.5 (Tests E2E del flow completo
+  voice → plan-intent → PlanPreview / clarification). Ver § 3.
 - **Decisiones B4 resueltas**: las 4 divergencias detectadas en pre-read
   ya están cerradas en
   [`05-implementation/B4-PENDING-DECISIONS.md`](./05-implementation/B4-PENDING-DECISIONS.md).
-- **Working tree LIMPIO** al cierre de B4.3 (commit `e5bb9ff`). Verificar
-  con `git status` antes de tocar nada.
+- **Working tree LIMPIO** al cierre de B4.4 + Wave 8 (commit `ae1ce17`
+  código + docs Wave 8). Verificar con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
-  (ver § 8). Gate `check` reparado en `71daedf` (0 errores desde B4.2).
+  (ver § 8). Gate `check` 0 errores desde B4.2 (`71daedf`).
 
 ---
 
@@ -63,15 +62,16 @@ related:
 | **fix** | Tipos Web Speech API (`speech-recognition.d.ts`) + null guard `recognition.ts` — gate `check` reparado (0 errores) | ✅ done | `71daedf` |
 | **B4.2** | VoiceScreen → plan-intent: `callPlanIntent()`, loading state, 14 códigos error ES, cards plan/clarification, `plan-intent-messages.ts` + 9 tests | ✅ done | `b959081` |
 | **B4.3** | `PlanPreview.svelte`: render legible humano del Plan JSON — verb label + tabla + frase + aviso confirmación writes. 10 tests unit. | ✅ done | `e5bb9ff` |
-| **B4.4-B4.5** | Clarification flow (TTS + re-listen + buildClarifiedPrompt) + E2E B4 | 🔲 pendiente | — |
+| **B4.4** | Clarification flow: `tts.speak(question)` + `tts.on('end')` auto-restart + `buildClarifiedPrompt()` + re-envío. 10 tests unit. | ✅ done | `ae1ce17` |
+| **B4.5** | Tests E2E del flow completo voice → plan-intent → PlanPreview / clarification | 🔲 pendiente | — |
 | **B5** | Confirmation Modal flow | 🔲 pendiente | — |
 | **B6** | Execute & Audit cliente | 🔲 pendiente | — |
 | **B7** | Atajos Android + Instalación PWA | 🔲 pendiente | — |
 | **B8** | Deploy + Smoke E2E Cubot KK9 | 🔲 pendiente | — |
 
-**Tests al cierre B4.3**: 198/198 Vitest verde (187 previos + 10 nuevos
-de `plan-preview.test.ts` + 1 auto-scan import-guard sobre `PlanPreview.svelte`).
-Gate `check` verde (0 errores). Deno tests no re-verificados desde `c07b235`
+**Tests al cierre B4.4**: 208/208 Vitest verde (198 previos + 10 nuevos
+de `b44-clarification-flow.test.ts`). Gate `check` verde (0 errores).
+Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 (re-verificación obligatoria pre-deploy en B8).
 
 ---
@@ -83,53 +83,99 @@ Gate `check` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 1. **Verificar working tree limpio**: `git status` debe decir
    "nothing to commit, working tree clean". Si hay cambios pendientes,
    pausar y reportar al director — pueden ser de otra sesión cruzada.
-2. **Verificar último commit**: `git log --oneline -5` debe mostrar
-   `e5bb9ff` (B4.3) y `ac664df` (docs Wave 6) como recientes.
-3. **Releer specs B4.4** ANTES de codear:
-   - `docs/04-specs/spec-tts-output.md` (TTS para clarification)
-   - `docs/04-specs/spec-voice-input.md` (re-listen tras TTS)
-   - `docs/02-architecture/PROMPT-ENGINEERING.md` §4 (formato concat
-     ya aprobado: `${promptOriginal}\n\nAclaración del usuario: ${respuestaUsuario}`)
-4. Si hay divergencia spec → pausar y reportar al director ANTES de
-   improvisar.
+2. **Verificar últimos commits**: `git log --oneline -5` debe mostrar
+   (más recientes primero):
+   ```
+   [hash Wave 8]  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
+   ae1ce17        B4.4: clarification flow TTS + re-listen + buildClarifiedPrompt
+   ec57693        docs: HANDOFF sincronizado post-B4.3 (Wave 7)
+   e5bb9ff        B4.3: PlanPreview component human-readable
+   ac664df        docs: HANDOFF sincronizado post-B4.2 (Wave 6)
+   ```
+3. **No hay specs nuevas que leer para B4.5** — es un bloque de tests
+   E2E, no de features nuevas. El código a testear (B4.2+B4.3+B4.4)
+   ya está commiteado y estable.
+4. Si el working tree NO está limpio, alguien dejó trabajo en curso.
+   Pausar y reportar al director antes de tocar nada.
 
-### Estado B4.3 (✅ done `e5bb9ff`)
+### Estado B4.4 (✅ done `ae1ce17`)
 
-Lo que entrega B4.3:
-- `PlanPreview.svelte` nuevo componente: prop `plan: Plan` → frase legible
-  humana por operación (ej: "Voy a buscar 5 registros en ventas donde estado = activo").
-  Muestra "Requiere confirmación antes de ejecutar." para writes.
-- `VoiceScreen.svelte` actualizado: importa `PlanPreview` y reemplaza
-  el card técnico de B4.2 con `<PlanPreview plan={planResponse.plan} />`.
-- `tests/unit/plan-preview.test.ts`: 10 tests unitarios con
-  `@testing-library/svelte` + jsdom.
-- **Gotcha resuelto**: `z.union` no garantiza narrowing TS por `op`
-  early-return en svelte-check → fix: `'value' in f` como discriminante.
-- **Decisión M1**: `ORION_REDACTED_COLUMNS` no existe en cliente
-  (no hay mecanismo en `types.ts`). Los valores del Plan JSON son input
-  del propio director — se muestran tal cual. Queda bajo TD-003 para M2.
+Lo que entrega B4.4 (clarification flow completo):
+- **`VoiceScreen.svelte`** — 5 cambios principales:
+  1. `clarificationOriginalPrompt: string | null = $state(null)` — guarda el
+     prompt original del primer turno para pasarlo a `buildClarifiedPrompt()`.
+  2. `awaitingClarificationListen: boolean = $state(false)` — flag que impide
+     doble-start de recognition (cuando usuario toca mic mientras TTS habla).
+  3. `recognition.on('result')` bifurcado: si `clarificationOriginalPrompt !== null`,
+     concatena con `buildClarifiedPrompt()`, resetea flag, relanza `callPlanIntent`.
+  4. `tts.on('end')` + `tts.on('error')` (filtro `'interrupted'`): disparan
+     `recognition.start()` automáticamente cuando TTS termina la pregunta.
+  5. Template extendido: card de clarificación visible durante re-listen
+     (`voiceState === 'idle' || clarificationOriginalPrompt !== null`).
+     Label "Escuchá la pregunta…" y hint "Respondé con tu voz…" condicionales.
+- **`tests/unit/b44-clarification-flow.test.ts`** — 10 tests unit con
+  mock TTS completo (`_handlers` map + `speak`/`cancel` vi.fn).
+- Gates al cierre: 208/208 Vitest verde, `check` 0 errores, `lint` 0 errores.
 
-### Sub-bloques B4.4-B4.5 pendientes
+**Gotchas críticos B4.4 — NO ignorar al escribir B4.5**:
 
-| Sub-bloque | Scope | Commit sugerido |
-|------------|-------|-----------------|
-| B4.4 | Clarification flow: TTS lee pregunta (`tts.speak(clarification.question)`) + auto-restart recognition + concat aprobado (`buildClarifiedPrompt()` ya exportado desde `plan-intent-client.ts`) → re-envío a `callPlanIntent` | `B4.4: clarification flow con TTS + re-listen` |
-| B4.5 | Tests E2E del flow completo voice → plan-intent → preview / clarification (mock fetch + mock SpeechRecognition) | `B4.5: tests E2E B4 voice→plan-intent` |
+1. **`tts.cancel()` emite `onerror`, NO `onend`**: cuando TTS es cancelado
+   (ej: usuario toca mic), `SpeechSynthesis.cancel()` dispara
+   `utter.onerror` con `ev.error === 'canceled'` → mapeado a `code: 'interrupted'`
+   en `synthesis.ts`. El handler `tts.on('error')` en `VoiceScreen` filtra
+   `interrupted` y NO llama `recognition.start()`. En tests E2E que simulen
+   cancel, emitir `'error'` con `{ code: 'interrupted' }`, nunca `'end'`.
 
-**Reglas duras vigentes para B4.4-B4.5**:
-- Clarification: `buildClarifiedPrompt()` ya está en `plan-intent-client.ts:238` — usarlo, no reimplementar.
-- TTS clarification: `tts.speak(question)` ANTES de reiniciar recognition (no en paralelo).
-- B4 NO ejecuta plan. Solo recibe Plan y previsualiza. Ejecución es B6.
-- Cualquier divergencia spec → pausar y reportar.
+2. **`recognition.resetToIdle()` es no-op en el mock de los tests**:
+   El mock de `VoiceInputController` tiene `resetToIdle = vi.fn()` (no emite
+   eventos). En producción, `resetToIdle()` llama `_setState('idle')` → emite
+   `'state': 'idle'`. En tests donde el código llama `resetToIdle()` en el
+   `finally` de `callPlanIntent`, el `voiceState` en el componente NO cambia
+   automáticamente. Si el test necesita que `voiceState` vuelva a `idle`,
+   emitir manualmente: `emit(rec, 'state', 'idle')` después de que
+   `tts.speak` haya sido llamado.
 
-**Reportar al director**:
-- Después de B4.4 (clarification flow integrado).
-- Después de B4.5 (B4 cerrado completo) — actualizar HANDOFF completo.
-- Cada reporte termina con check explícito: "Verificaciones pendientes
-  del round anterior: [todas cerradas / X pendientes]".
+3. **`toBeDisabled()` / `toBeEnabled()` NO disponibles**: `@testing-library/jest-dom`
+   no está cargado en este entorno. Usar:
+   `expect((btn as HTMLButtonElement).disabled).toBe(false)`.
+   No usar `toBeDisabled()`, `toBeEnabled()`, `toHaveClass()`, etc.
 
-**Recordatorio**: actualizar este HANDOFF.md al cerrar B4 antes del
-próximo bloque (ver § 18).
+4. **Mock TTS necesita `_handlers` map (patrón B4.4, no B3)**:
+   El mock de B3 (`b3-voice-screen.test.ts`) usa `on = vi.fn()` — no almacena
+   handlers y no permite emitir eventos. En B4.5 los handlers de `tts.on('end')`
+   y `tts.on('error')` son esenciales. **Usar el patrón de
+   `tests/unit/b44-clarification-flow.test.ts`**: el mock almacena handlers en
+   `_handlers: Record<string, ((v: unknown) => void)[]>` y los expone vía el
+   helper `emit(inst, event, value?)`.
+
+### B4.5 — Tests E2E del flow completo B4 (🔲 pendiente)
+
+**Archivo a crear**: `tests/e2e/b45-voice-plan-flow.test.ts`
+
+**Stack de mocks necesario** (mismo patrón base que `b44-clarification-flow.test.ts`):
+- `VoiceInputController`: mock con `_handlers` + `_lastInst` + `start/stop/cancel/resetToIdle` vi.fn
+- `TtsOutputController`: mock con `_handlers` + `_lastInst` + `speak/cancel` vi.fn
+- `supabase`: mock mínimo auth `onAuthStateChange`
+- `plan-intent-client`: `requestPlanIntent` vi.fn + `buildClarifiedPrompt` real o vi.fn
+
+**Escenarios mínimos para B4.5** (5 tests):
+
+| # | Nombre | Descripción |
+|---|--------|-------------|
+| B4.5.1 | Golden path voz → plan SELECT | `emit(rec, 'result', '...')` → `requestPlanIntent` retorna `kind:'plan'` → `PlanPreview` visible con texto legible (`/Voy a buscar/`) |
+| B4.5.2 | Keyboard fallback → plan SELECT | Tipear en input de texto si existe → mismo resultado que voz → `PlanPreview` visible |
+| B4.5.3 | Clarification E2E completo | `result` → `kind:'clarification'` → `tts.speak` llamado → emit `tts 'end'` → `recognition.start` → segundo `result` → `requestPlanIntent` con `buildClarifiedPrompt` → `kind:'plan'` → `PlanPreview` visible |
+| B4.5.4 | Error card visible tras error red | `result` → `requestPlanIntent` rechaza con `PlanIntentClientError({ code: 'network_error' })` → card error visible en español |
+| B4.5.5 | Cancel limpia estado | `result` → `requestPlanIntent` pendiente (promise sin resolver) → clic "Cancelar" → card desaparece → estado vuelve a idle |
+
+**Commit sugerido**: `B4.5: tests E2E B4 voice→plan-intent`
+
+**Reglas duras para B4.5**:
+- B4 NO ejecuta plan — solo recibe Plan JSON y previsualiza. Ejecución es B6.
+- No agregar features nuevas a `VoiceScreen.svelte` en B4.5. Solo tests.
+- Gates antes de commit: `npm run check` + `npm run lint` + `npm run test`.
+- Al cerrar B4.5: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6,
+  §19) y commitear docs Wave 9 ANTES del siguiente bloque.
 
 ---
 
@@ -151,7 +197,7 @@ Resumen:
 
 ## 5. Working tree LIMPIO (verificación obligatoria al abrir sesión)
 
-Estado al cierre de B4.3: **working tree limpio, todo commiteado**.
+Estado al cierre de B4.4 + Wave 8: **working tree limpio, todo commiteado**.
 
 Verificar siempre al abrir sesión:
 
@@ -159,11 +205,11 @@ Verificar siempre al abrir sesión:
 git status         # debe decir: nothing to commit, working tree clean
 git log --oneline -5
 # debe mostrar (más recientes primero):
-#   [hash docs B4.3]  docs: HANDOFF sincronizado post-B4.3
-#   e5bb9ff  B4.3: PlanPreview component human-readable
-#   ac664df  docs: HANDOFF sincronizado post-B4.2 (Wave 6)
-#   b959081  B4.2: VoiceScreen integra plan-intent con loading state y manejo de errores
-#   71daedf  fix: tipos Web Speech API y null guard en recognition.ts
+#   [hash Wave 8]  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
+#   ae1ce17        B4.4: clarification flow TTS + re-listen + buildClarifiedPrompt
+#   ec57693        docs: HANDOFF sincronizado post-B4.3 (Wave 7)
+#   e5bb9ff        B4.3: PlanPreview component human-readable
+#   ac664df        docs: HANDOFF sincronizado post-B4.2 (Wave 6)
 ```
 
 Si el working tree NO está limpio, alguien dejó trabajo en curso.
@@ -181,7 +227,7 @@ Wave 5). Debe NUNCA aparecer en `git status` como untracked.
 src/
 ├── App.svelte                       — shell principal, routing por router.mode
 ├── components/
-│   ├── VoiceScreen.svelte           — pantalla voz + integración plan-intent (B3+B4.2+B4.3) ✅
+│   ├── VoiceScreen.svelte           — pantalla voz + integración plan-intent (B3+B4.2+B4.3+B4.4) ✅
 │   ├── PlanPreview.svelte           — render legible del Plan JSON (B4.3) ✅ e5bb9ff
 │   ├── LoginWizard.svelte           — login magic link (B2) ✅
 │   ├── Settings.svelte              — pantalla config (B2) ✅
@@ -226,7 +272,8 @@ tests/
 │   ├── recognition.test.ts          — 14 tests VoiceInputController (B3) ✅
 │   ├── synthesis.test.ts            — 16 tests TtsOutputController (B3) ✅
 │   ├── plan-intent-client.test.ts   — tests del client (B4.1) ✅ d1e8a94
-│   └── plan-preview.test.ts         — 10 tests PlanPreview (B4.3) ✅ e5bb9ff
+│   ├── plan-preview.test.ts         — 10 tests PlanPreview (B4.3) ✅ e5bb9ff
+│   └── b44-clarification-flow.test.ts — 10 tests clarification flow TTS+re-listen (B4.4) ✅ ae1ce17
 ├── e2e/
 │   ├── b2-auth-config.test.ts       — flows auth, config, logout (B2) ✅
 │   └── b3-voice-screen.test.ts      — 8 tests VoiceScreen UI (B3) ✅
@@ -530,3 +577,4 @@ confiable entre sesiones.**
 | Wave 5 | HANDOFF reescrito a prueba de fallos + .gitignore protegido (cierra R-05); seguido por commit `d1e8a94` (B4.1 plan-intent client de sesión cruzada con Codex 5.5) | 2026-05-03 | `bbcab81` |
 | Wave 6 | B4.2 commiteado (trabajo pendiente de sesión anterior): fix gate check pre-existente (`71daedf`) + VoiceScreen integración plan-intent completa (`b959081`). HANDOFF sincronizado. | 2026-05-03 | `b959081` |
 | Wave 7 | B4.3: PlanPreview.svelte (render legible humano) + 10 tests unit + VoiceScreen actualizado. HANDOFF sincronizado. Gates: 198/198 verde. | 2026-05-03 | `e5bb9ff` |
+| Wave 8 | B4.4: clarification flow completo (TTS speaks question + auto-restart recognition + buildClarifiedPrompt + re-submit) + 10 tests unit. HANDOFF sincronizado para B4.5. Gates: 208/208 verde. | 2026-05-03 | `ae1ce17` |
