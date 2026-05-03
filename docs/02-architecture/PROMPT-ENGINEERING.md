@@ -348,6 +348,17 @@ rioplatense.
 ```
 `)`
 
+### 4.7 Concatenación cliente tras clarificación
+
+En M1 no hay `conversation_id` ni memoria conversacional server-side.
+Cuando `plan-intent` devuelve `kind: 'clarification'`, la PWA vuelve a
+llamar al endpoint con el contexto concatenado en `user_prompt` usando
+exactamente este formato:
+
+```ts
+`${promptOriginal}\n\nAclaración del usuario: ${respuestaUsuario}`
+```
+
 ---
 
 ## 5. Anti-patterns documentados

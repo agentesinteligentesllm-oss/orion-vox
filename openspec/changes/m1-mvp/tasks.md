@@ -143,17 +143,19 @@ se complete y se valide.
 
 ## Bloque 3 — PWA Plan-Intent integration (depende: B2 + B1.4)
 
-> 🔄 **PAUSADO** — 2026-05-02. Hay 4 decisiones pendientes antes de
-> codear. Ver [`B4-PENDING-DECISIONS.md`](../../../docs/05-implementation/B4-PENDING-DECISIONS.md).
+> 🔄 **EN CURSO** — decisiones B4 resueltas el 2026-05-03. Ver
+> [`B4-PENDING-DECISIONS.md`](../../../docs/05-implementation/B4-PENDING-DECISIONS.md).
 > En la sesión de implementación, B4-Voice se ejecutó primero (es paralelo
-> a B3 per tabla de dependencias). B3-Plan-Intent arranca una vez el
-> director resuelva las decisiones.
+> a B3 per tabla de dependencias). B3-Plan-Intent continúa con esas
+> decisiones ya resueltas.
 
-- [ ] **T3.1** — Cliente `plan-intent` (fetch a la Edge con
+- [x] **T3.1** — Cliente `plan-intent` (fetch a la Edge con
   `Authorization: Bearer ${jwt}` header).
   *Aceptación*: una frase enviada al endpoint devuelve Plan JSON o
   Clarification; 401 manejado con redirect a login.
-  [PAUSADO: ver B4-PENDING-DECISIONS.md]
+  ✅ 2026-05-03 (`plan-intent-client.ts`, errores spec, refresh de
+  schema en siguiente llamada, handler 401 para routing/login en
+  integración UI)
 - [ ] **T3.2** — Manejo de respuesta Plan vs Clarification: si es
   Clarification, mostrar pregunta al usuario y reenviar refinada.
   *Aceptación*: frase ambigua ("borra eso") muestra pregunta de

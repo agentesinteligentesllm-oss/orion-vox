@@ -3,7 +3,7 @@ title: B4 — Decisiones pendientes antes de codear
 status: draft
 milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-02
+last-reviewed: 2026-05-03
 supersedes: []
 related:
   - ../../docs/04-specs/spec-plan-intent-edge.md
@@ -17,7 +17,8 @@ Divergencias identificadas durante el pre-read de specs de B4
 (2026-05-02). Ninguna puede resolverse con asunciones: cada una
 afecta la firma de `plan-intent-client.ts` o la UX del flujo.
 
-**Estado**: requieren respuesta del director antes de arrancar B4.1.
+**Estado**: resueltas por directiva del director el 2026-05-03. B4.1
+puede implementarse siguiendo el spec autoritativo.
 
 ---
 
@@ -48,7 +49,10 @@ No hay un HTTP 409 emitido por el server en ninguna parte del spec.
 retry automático no está en el spec; agregarlo sin base introduce
 comportamiento no auditado.
 
-**Decisión del director**: _______________
+**Decisión del director**: opción (a). Seguir el spec autoritativo:
+`plan-intent` no inventa 409 ni retry automático en M1. El cliente
+detecta cambio de `schema_hash`, invalida la cache local y la siguiente
+llamada envía `X-Refresh-Schema: 1`.
 
 ---
 
@@ -79,7 +83,9 @@ No existe `gemini_error` como código en el spec.
 que Gemini recibió la request pero fue lenta, puede reintentar;
 en el primero Gemini está caído).
 
-**Decisión del director**: _______________
+**Decisión del director**: opción (a). Implementar códigos separados:
+502 `gemini_unavailable` y 504 `gemini_timeout`. No usar
+`gemini_error` genérico.
 
 ---
 
@@ -110,7 +116,8 @@ El formato que se elija afecta directamente cómo Gemini interpreta
 el contexto del turno anterior. Una vez elegido, se documenta en
 `PROMPT-ENGINEERING.md` §4 (actualmente vacío para esta sección).
 
-**Decisión del director**: _______________
+**Decisión del director**: formato aprobado exacto:
+`${promptOriginal}\n\nAclaración del usuario: ${respuestaUsuario}`.
 
 ---
 
@@ -132,7 +139,8 @@ en ninguna parte del spec.
 Opciones: `0.1.0` (B0 done), `0.3.0` (B3 done), `1.0.0-alpha.1`
 (convención pre-release).
 
-**Decisión del director**: _______________
+**Decisión del director**: dejar `0.0.0` si el codebase no tiene
+versión real ya disponible.
 
 ---
 
@@ -151,9 +159,9 @@ el server en M1.
 
 ## Checklist para desbloquear B4
 
-- [ ] Decisión 1 — schema_stale: director elige opción (a), (b) o (c)
-- [ ] Decisión 2 — gemini codes: director confirma opción (a) o (b)
-- [ ] Decisión 3 — clarification format: director aprueba formato
-- [ ] Decisión 4 — client_version: director confirma o elige otra versión
+- [x] Decisión 1 — schema_stale: opción (a), seguir spec
+- [x] Decisión 2 — gemini codes: opción (a), códigos separados
+- [x] Decisión 3 — clarification format: formato exacto aprobado
+- [x] Decisión 4 — client_version: dejar `0.0.0`
 
 Una vez todas con [x], Codex puede arrancar B4.1 (`plan-intent-client.ts`).

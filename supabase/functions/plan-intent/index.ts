@@ -329,7 +329,8 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<Gem
 
 const HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': PWA_ORIGIN,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-refresh-schema',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Cache-Control': 'no-store',
   'X-Content-Type-Options': 'nosniff',

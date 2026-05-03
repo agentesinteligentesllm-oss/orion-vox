@@ -4,14 +4,14 @@ status: in-progress  # draft | in-review | in-progress | completed | archived
 owner: orion-vox
 target_milestone: M1
 created: 2026-05-01
-last_updated: 2026-05-02
+last_updated: 2026-05-03
 dependencies: []  # ADR-012 fue creado en Wave 1; ya no es dependencia bloqueante
 completed_blocks:
   - B0  # 45b0707 — setup base Svelte 5 + Vite 7 + TS + Tailwind 4 + Biome + PWA
   - B1  # c07b235 — Supabase backend (código completo; deploy pendiente en B8)
   - B2  # 138f4e3 — PWA Auth & Config (auth store, routing, settings, logout)
   - B3-voice  # 5ebb458 — Voice (VoiceInputController, TtsOutputController, VoiceScreen)
-current_block: B3-plan-intent-paused-decisions-required  # ver docs/05-implementation/B4-PENDING-DECISIONS.md
+current_block: B3-plan-intent-in-progress  # T3.1 client done; T3.2/T3.3 pending
 next_block: B5  # tras resolver B3-plan-intent
 artifacts:
   proposal: proposal.md
@@ -50,7 +50,8 @@ notes: |
   B0-B3 completos: 168/168 Vitest verde. TypeScript limpio. Biome 0 errores.
 
   Orden real de implementación: B0→B1→B2→B4-Voice(como B3)→pausa.
-  B3-Plan-Intent pausado: 4 decisiones pendientes del director.
+  B3-Plan-Intent desbloqueado por directiva del director. T3.1
+  implementa el cliente plan-intent; T3.2/T3.3 siguen pendientes.
   Ver: docs/05-implementation/B4-PENDING-DECISIONS.md
   Ver: docs/HANDOFF.md (documento de traspaso para Codex 5.5)
 

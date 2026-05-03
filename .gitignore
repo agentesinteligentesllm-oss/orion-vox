@@ -14,6 +14,15 @@ dist-ssr
 .env*
 !.env.example
 
+# Datos sensibles del director (credenciales Supabase, notas privadas)
+datos de suapabase
+datos de supabase
+datos-supabase*
+secrets/
+*.secret
+credentials*.txt
+credentials*.json
+
 # Claude Code internal config
 .claude/
 
