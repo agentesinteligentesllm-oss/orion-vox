@@ -1,5 +1,6 @@
 <script lang="ts">
 import {
+  buildClarifiedPrompt,
   PlanIntentClientError,
   type PlanIntentResponse,
   requestPlanIntent,
@@ -29,12 +30,17 @@ let keyboardInput = $state('');
 let micPermission = $state<PermissionState | null>(null);
 let planResponse = $state<PlanIntentResponse | null>(null);
 let planError = $state<string | null>(null);
+let clarificationOriginalPrompt = $state<string | null>(null);
+let awaitingClarificationListen = $state(false);
 
 recognition.on('state', (s) => {
   voiceState = s;
   if (s === 'listening') {
     interimText = '';
-    planResponse = null;
+    // preserve clarification card while re-listening for the answer
+    if (clarificationOriginalPrompt === null) {
+      planResponse = null;
+    }
     planError = null;
     errorInfo = null;
   } else if (s === 'idle') {
@@ -48,11 +54,33 @@ recognition.on('interim', (text) => {
 recognition.on('result', async (text) => {
   lastResult = text;
   interimText = '';
-  await callPlanIntent(text);
+  if (clarificationOriginalPrompt !== null) {
+    const clarifiedPrompt = buildClarifiedPrompt(clarificationOriginalPrompt, text);
+    clarificationOriginalPrompt = null;
+    await callPlanIntent(clarifiedPrompt);
+  } else {
+    await callPlanIntent(text);
+  }
 });
 recognition.on('error', (err) => {
   errorInfo = err;
   if (err.code === 'unavailable' || err.code === 'not-allowed') showKeyboard = true;
+});
+
+tts.on('end', () => {
+  if (awaitingClarificationListen) {
+    awaitingClarificationListen = false;
+    recognition.start();
+  }
+});
+tts.on('error', (err) => {
+  if (awaitingClarificationListen) {
+    awaitingClarificationListen = false;
+    // TTS failed for a real reason (not user cancel) — question is visible, auto-listen anyway
+    if (err.code !== 'interrupted') {
+      recognition.start();
+    }
+  }
 });
 
 async function callPlanIntent(text: string): Promise<void> {
@@ -76,6 +104,12 @@ async function callPlanIntent(text: string): Promise<void> {
       },
     });
     planResponse = response;
+    if (response.kind === 'clarification') {
+      clarificationOriginalPrompt = text;
+      awaitingClarificationListen = true;
+      // not awaited: TTS is non-blocking; auto-restart fires via tts.on('end')
+      tts.speak(response.clarification.question);
+    }
   } catch (err) {
     const clientErr =
       err instanceof PlanIntentClientError
@@ -130,6 +164,8 @@ $effect(() => {
 async function handleMicTap() {
   if (micPermission === 'denied') return;
   if (voiceState === 'idle' || voiceState === 'error') {
+    // user explicitly takes control — cancel TTS auto-restart
+    awaitingClarificationListen = false;
     errorInfo = null;
     tts.cancel();
     await recognition.start();
@@ -139,6 +175,8 @@ async function handleMicTap() {
 }
 
 function handleCancel() {
+  awaitingClarificationListen = false;
+  clarificationOriginalPrompt = null;
   recognition.cancel();
   tts.cancel();
   planResponse = null;
@@ -223,6 +261,8 @@ function goToSettings() {
           {:else if micPermission === 'prompt'}
             <p class="text-sm text-gray-400">Tocá para activar el micrófono.</p>
             <p class="mt-1 text-xs text-gray-600">El navegador pedirá permiso de micrófono.</p>
+          {:else if awaitingClarificationListen}
+            <p class="text-sm text-amber-400">Escuchá la pregunta…</p>
           {:else}
             <p class="text-sm text-gray-500">
               {lastResult ? 'Tocá para continuar.' : 'Listo para escucharte.'}
@@ -260,14 +300,17 @@ function goToSettings() {
       </div>
     {/if}
 
-    <!-- Respuesta del plan -->
-    {#if planResponse && voiceState === 'idle'}
+    <!-- Respuesta del plan — la card de clarificación persiste también durante re-listen -->
+    {#if planResponse && (voiceState === 'idle' || clarificationOriginalPrompt !== null)}
       {#if planResponse.kind === 'plan'}
         <PlanPreview plan={planResponse.plan} />
       {:else}
         <div class="w-full max-w-sm rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3">
           <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-400">Necesito más información</p>
           <p class="text-sm text-gray-200">{planResponse.clarification.question}</p>
+          {#if awaitingClarificationListen || clarificationOriginalPrompt !== null}
+            <p class="mt-2 text-xs text-amber-600">Respondé con tu voz cuando estés listo…</p>
+          {/if}
         </div>
       {/if}
     {/if}
