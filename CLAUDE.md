@@ -123,32 +123,72 @@ Mapas C4 ASCII y DDL canónico en `docs/02-architecture/OVERVIEW.md` y
 Lista completa en `docs/00-constitution/CONSTITUTION.md` y checklist
 ejecutable en `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 
-## Estado Actual
+## Estado Actual (Wave 4 — 2026-05-02)
 
-**Fase 0 (documentación) COMPLETA tras Wave 1, 2 y 3 de reformas.**
-~80 archivos creados y reformados post-auditoría Codex. 12 ADRs, 14
-specs (incluye los 2 nuevos: `spec-auth-flow.md` y
-`spec-plan-intent-edge.md`), arquitectura completa con mapas C4,
-roadmap M1/M2/M3 reformulado, change `m1-mvp` listo para
-implementación.
+### Implementación
 
-**Próximo paso = arrancar Bloque 0 de implementación**:
+| Bloque | Descripción | Estado | Commit |
+|--------|-------------|--------|--------|
+| B0 | Setup base: Svelte 5 + Vite 7 + TS + Tailwind 4 + Biome + PWA | ✅ | `45b0707` |
+| B1 | Supabase backend: plan-intent, execute-plan, schema-summary edges + orion_audit DDL + plan-schema Zod + query-builder + redact | ✅ código (⚠️ sin deploy real) | `c07b235` |
+| B2 | PWA Auth & Config: auth store, routing, LoginWizard, Settings.svelte, IndexedDB, logout | ✅ | `138f4e3` |
+| B3 | Voice screen: VoiceInputController, TtsOutputController, VoiceScreen, unit tests (30), E2E tests (8) | ✅ | `5ebb458` |
+| B4 | Plan-Intent client integration | 🔄 PAUSADO — decisiones pendientes | — |
+| B5–B8 | Confirmation, Execute, Atajos, Deploy | ⏳ pendiente | — |
 
-- Archivo guía: `openspec/changes/m1-mvp/tasks.md` (9 bloques, B0
-  → B8).
-- ADR-012 (framework) ya aprobado: Svelte 5 + Vite + TypeScript.
-- Sin bloqueos pendientes.
-- Criterios de aceptación: `docs/05-implementation/M1-MVP.md`.
+**Tests**: 168/168 Vitest verde (unit + E2E + contracts).
 
-**Deuda técnica residual M1 → M2 (4 items reales)**:
+**Próximo paso**: resolver 4 decisiones en
+`docs/05-implementation/B4-PENDING-DECISIONS.md` y arrancar B4.
+
+### Estructura del código fuente (post B0-B3)
+
+```
+src/
+├── App.svelte
+├── components/
+│   ├── VoiceScreen.svelte        ← B3
+│   ├── LoginWizard.svelte        ← B2
+│   ├── Settings.svelte           ← B2
+│   └── ConfigWrapper.svelte      ← B2
+└── lib/
+    ├── auth-store.svelte.ts      ← B2
+    ├── router.svelte.ts          ← B2
+    ├── supabase.ts               ← B2
+    ├── voice/
+    │   ├── recognition.ts        ← B3
+    │   └── synthesis.ts          ← B3
+    ├── storage/
+    │   ├── local-store.ts        ← B2
+    │   └── types.ts              ← B2
+    └── api/                      ← vacío, a crear en B4
+
+supabase/functions/
+├── _shared/{plan-schema,query-builder,redact}.ts  ← B1
+├── plan-intent/index.ts          ← B1
+├── execute-plan/index.ts         ← B1
+└── schema-summary/index.ts       ← B1
+
+tests/{unit,e2e,contracts}/       ← B1, B2, B3
+supabase/migrations/001,002.sql   ← B1
+```
+
+### Deuda técnica residual M1 → M2 (5 items)
+
 - TD-001-bis — `service_role` con `BYPASSRLS` en `execute-plan` →
   M2 rol dedicado `orion_vox_executor`.
 - TD-003 — preview de writes generado client-side → M2 firmado
   server-side con `preview_id` (HMAC).
 - TD-004 — sin UI admin para allowlist/redacción → M2 UI admin.
 - TD-005 — RLS deshabilitada en `orion_audit` → M2 RLS estricta.
+- TD-008 — sin retry para Plan JSON inválido del LLM → M2.
 
 Detalle: `docs/05-implementation/TECHNICAL-DEBT.md`.
+
+### Handoff
+
+Documento de traspaso completo: `docs/HANDOFF.md`.
+Decisiones bloqueantes para B4: `docs/05-implementation/B4-PENDING-DECISIONS.md`.
 
 ## Tribunal de IAs
 
@@ -167,21 +207,25 @@ Protocolo completo en `docs/00-constitution/GOVERNANCE.md` y
 
 ## Documentos clave para retomar contexto rápido
 
-1. `docs/INDEX.md` — índice navegable de toda la documentación.
-2. `docs/02-architecture/OVERVIEW.md` — vista C4 + capas + ADRs
+1. `docs/HANDOFF.md` — **puerta de entrada para Codex**. Estado
+   completo al cierre de Wave 4.
+2. `docs/05-implementation/B4-PENDING-DECISIONS.md` — 4 decisiones
+   que bloquean B4. Resolver primero.
+3. `docs/INDEX.md` — índice navegable de toda la documentación.
+4. `docs/02-architecture/OVERVIEW.md` — vista C4 + capas + ADRs
    referenciados.
-3. `docs/02-architecture/DATA-FLOW.md` — flujos READ/WRITE/CANCEL/ERROR.
-4. `docs/02-architecture/SECURITY-MODEL.md` — modelo de seguridad
+5. `docs/02-architecture/DATA-FLOW.md` — flujos READ/WRITE/CANCEL/ERROR.
+6. `docs/02-architecture/SECURITY-MODEL.md` — modelo de seguridad
    por milestone (M1 base segura, M2 hardening).
-5. `docs/03-adr/ADR-INDEX.md` — todas las decisiones.
-6. `docs/05-implementation/M1-MVP.md` — scope y criterios M1.
-7. `docs/05-implementation/M2-HARDENING.md` — scope M2 (4 items
+7. `docs/03-adr/ADR-INDEX.md` — todas las decisiones.
+8. `docs/05-implementation/M1-MVP.md` — scope y criterios M1.
+9. `docs/05-implementation/M2-HARDENING.md` — scope M2 (5 items
    residuales).
-8. `openspec/changes/m1-mvp/tasks.md` — checklist de implementación
-   (B0 a B8).
-9. `docs/05-implementation/TECHNICAL-DEBT.md` — deuda M1 → M2 (4
-   items reales).
-10. `docs/07-references/history/DEBATE-LOG.md` — bitácora honesta del
+10. `openspec/changes/m1-mvp/tasks.md` — checklist de implementación
+    (B0 a B8).
+11. `docs/05-implementation/TECHNICAL-DEBT.md` — deuda M1 → M2 (5
+    items reales, incluyendo TD-008).
+12. `docs/07-references/history/DEBATE-LOG.md` — bitácora honesta del
     debate y de las reformas.
 
 ## Engram (memoria persistente)

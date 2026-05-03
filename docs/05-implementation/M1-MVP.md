@@ -234,11 +234,59 @@ Resumen rápido:
 
 ---
 
-## Pre-requisitos
+## Progreso de implementación (Wave 4 — 2026-05-02)
 
-> **ADR-012 (framework PWA)** — **APROBADO** (Svelte 5 + Vite +
-> TypeScript). Listo para arrancar Bloque 0 de
-> [`tasks.md`](../../openspec/changes/m1-mvp/tasks.md).
+**Tests**: 168/168 Vitest verde. TypeScript estricto limpio. Biome 0 warnings.
+
+| Bloque | Descripción | % completo | Estado |
+|--------|-------------|------------|--------|
+| B0 | Setup base | 100% | ✅ `45b0707` |
+| B1 | Supabase backend (código) | ~80% | ✅ código done, ⚠️ T1.1/T1.2/T1.7/T1.9 requieren deploy Supabase real |
+| B2 | PWA Auth & Config | 100% | ✅ `138f4e3` |
+| B3-Voice | VoiceInputController + TtsOutputController + VoiceScreen | 100% | ✅ `5ebb458` |
+| B4-PlanIntent | plan-intent-client.ts + PlanPreview + Clarification | 0% | 🔄 PAUSADO |
+| B5 | Confirmation flow | 0% | ⏳ |
+| B6 | Execute & Audit client | 0% | ⏳ |
+| B7 | Atajos PWA | 0% | ⏳ |
+| B8 | Deploy & Validación | 0% | ⏳ |
+
+**M1 total**: ~40% completado.
+
+### Criterios Done verificados
+
+- [x] PWA shell levanta: `npm run dev` + `npm run build` limpios (B0)
+- [x] Tailwind 4 funcional en componentes (B0)
+- [x] TypeScript estricto + Biome verde (B0, mantenido en B1-B3)
+- [x] `vite-plugin-pwa` produce manifest válido (B0)
+- [x] Auth store reactivo (Svelte 5 runes) + routing guard (B2)
+- [x] Login magic link: pantalla + estado + trigger `signInWithOtp` (B2)
+- [x] Callback URL handling (B2)
+- [x] Settings: idioma, read-only, dry-run persistidos en IndexedDB (B2)
+- [x] Logout limpia sesión + IndexedDB + redirect (B2)
+- [x] orion_audit DDL migrations 001 + 002 (B1)
+- [x] plan-intent Edge Function código completo per spec (B1)
+- [x] execute-plan Edge Function código completo per spec (B1)
+- [x] schema-summary Edge Function código completo per spec (B1)
+- [x] plan-schema Zod compartido PWA↔Deno, ADR-013 (B1)
+- [x] VoiceInputController: es-MX, 4 estados, 7 errores con mensajes españoles (B3)
+- [x] TtsOutputController: es-MX, truncación 300 chars, cancel-before-speak (B3)
+- [x] VoiceScreen: auto-listen per permission state, UI 4 estados, keyboard fallback (B3)
+- [x] Unit tests recognition (14) + synthesis (16) (B3)
+- [x] E2E tests VoiceScreen (8 scenarios incl. permission states) (B3)
+
+### Criterios Done pendientes
+
+- [ ] plan-intent-client.ts con JWT Bearer, 11 error codes (B4)
+- [ ] PlanPreview human-readable (B4)
+- [ ] Clarification flow TTS + auto-restart (B4)
+- [ ] Modal confirmación táctil para writes (B5)
+- [ ] execute-plan client con manejo errores (B6)
+- [ ] Vista auditoría espejo IndexedDB (B6)
+- [ ] Smoke E2E voz→Supabase en Cubot KK9 (B8)
+- [ ] Deploy Vercel + PWA install en Cubot (B8)
+- [ ] Uso real 2 semanas sin pérdida de datos (post-deploy)
+
+## Pre-requisitos
 
 ---
 

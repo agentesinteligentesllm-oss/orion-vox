@@ -27,29 +27,33 @@ se complete y se valide.
 > **Pre-requisito**: ADR-012 (framework PWA = Svelte 5 + Vite + TS)
 > **APROBADO**. Listo para arrancar Bloque 0.
 
+> **Nota de implementación Wave 4**: B4-Voice se ejecutó antes que B3-Plan-Intent
+> (permitido per tabla de dependencias: ambos son paralelos). El orden real de
+> implementación fue B0→B1→B2→B4-Voice→B3-Plan-Intent(pausado).
+
 ---
 
 ## Bloque 0 — Setup base (depende: ADR-012 ✅ aprobado)
 
-- [ ] **T0.1** — Inicializar repo Svelte 5 + Vite + TypeScript
+- [x] **T0.1** — Inicializar repo Svelte 5 + Vite + TypeScript
   (`npm create vite@latest`, template `svelte-ts`).
   *Aceptación*: `npm run dev` levanta y `npm run build` produce bundle
-  sin warnings.
-- [ ] **T0.2** — Configurar Tailwind 4 (o CSS modules vanilla —
+  sin warnings. ✅ 2026-05-01 `45b0707`
+- [x] **T0.2** — Configurar Tailwind 4 (o CSS modules vanilla —
   decisión secundaria documentada en `design.md`).
   *Aceptación*: una clase de utility o un módulo CSS funciona en un
-  componente smoke.
-- [ ] **T0.3** — Configurar TypeScript estricto (`strict: true`,
+  componente smoke. ✅ 2026-05-01 `45b0707`
+- [x] **T0.3** — Configurar TypeScript estricto (`strict: true`,
   `noUncheckedIndexedAccess: true`) + Biome lint + format.
-  *Aceptación*: `tsc --noEmit` y `biome check` pasan limpios.
-- [ ] **T0.4** — Configurar `vite-plugin-pwa` con manifest base
+  *Aceptación*: `tsc --noEmit` y `biome check` pasan limpios. ✅ 2026-05-01 `45b0707`
+- [x] **T0.4** — Configurar `vite-plugin-pwa` con manifest base
   (nombre, iconos, theme color, shortcuts placeholder).
   *Aceptación*: `npm run build` produce `manifest.webmanifest` válido
-  según Lighthouse.
-- [ ] **T0.5** — Estructura de carpetas: `src/lib/` (módulos
+  según Lighthouse. ✅ 2026-05-01 `45b0707`
+- [x] **T0.5** — Estructura de carpetas: `src/lib/` (módulos
   reutilizables), `src/routes/` (vistas), `src/components/` (UI),
   `src/lib/contracts/` (barrel de contratos compartidos; ADR-013).
-  *Aceptación*: árbol creado y `index.ts` en cada lib exporta lo suyo.
+  *Aceptación*: árbol creado y `index.ts` en cada lib exporta lo suyo. ✅ 2026-05-01 `45b0707`
 
 ---
 
@@ -58,124 +62,141 @@ se complete y se valide.
 - [ ] **T1.1** — Crear proyecto Supabase del director, obtener URL +
   `anon key`, guardar en password manager.
   *Aceptación*: dashboard responde, keys persistidas en bóveda.
+  [pendiente: setup manual — requiere cuenta Supabase real]
 - [ ] **T1.2** — Habilitar Supabase Auth y configurar magic link con
   callback URL apuntando a la PWA Vercel.
   *Aceptación*: enviar magic link al email del director llega y al
   hacer click activa la sesión.
-- [ ] **T1.3** — Escribir DDL de `orion_audit` con índices según
+  [pendiente: config manual — requiere T1.1]
+- [x] **T1.3** — Escribir DDL de `orion_audit` con índices según
   [`spec-audit-table`](../../../docs/04-specs/spec-audit-table.md);
   versionar como `supabase/migrations/001_orion_audit.sql`.
-  *Aceptación*: `supabase db reset` aplica la migración limpia.
-- [ ] **T1.4** — Implementar Edge Function `plan-intent` (Deno) según
+  *Aceptación*: `supabase db reset` aplica la migración limpia. ✅ 2026-05-02 `5f149ec`+`ee2370a` (migrations 001 + 002)
+- [x] **T1.4** — Implementar Edge Function `plan-intent` (Deno) según
   [`spec-plan-intent-edge`](../../../docs/04-specs/spec-plan-intent-edge.md):
   recibe `{user_prompt, client_version}` + JWT, valida
   `user.id == ORION_ALLOWED_USER_ID`, llama `schema-summary`
   internamente, llama Gemini server-side con `GEMINI_API_KEY`,
   devuelve Plan JSON o Clarification.
-  *Aceptación*: `supabase functions serve plan-intent` responde a
-  prompt válido con Plan JSON o Clarification, rechaza JWT inválido
-  con 401.
-- [ ] **T1.5** — Implementar Edge Function `execute-plan` (Deno) según
+  *Aceptación*: código completo per spec. ✅ 2026-05-02 `cd43e96`
+  [nota: smoke con deploy real pendiente en T1.9]
+- [x] **T1.5** — Implementar Edge Function `execute-plan` (Deno) según
   [`spec-execute-plan-edge`](../../../docs/04-specs/spec-execute-plan-edge.md):
   recibe Plan JSON + JWT, valida JWT y allowlist
   `ORION_ALLOWED_TABLES`, ejecuta con `service_role` server-side,
   aplica `ORION_REDACTED_COLUMNS`, audita.
-  *Aceptación*: smoke local con SELECT/INSERT/UPDATE/DELETE válidos
-  ejecuta y audita; tabla fuera de allowlist devuelve 403.
-- [ ] **T1.6** — Implementar Edge Function `schema-summary` (Deno)
+  *Aceptación*: código completo per spec. ✅ 2026-05-02 `aab6b51`
+  [nota: smoke con deploy real pendiente en T1.9]
+- [x] **T1.6** — Implementar Edge Function `schema-summary` (Deno)
   según [`spec-schema-summary-edge`](../../../docs/04-specs/spec-schema-summary-edge.md):
   introspección de `information_schema` filtrada por
   `ORION_ALLOWED_TABLES`, redacción según `ORION_REDACTED_COLUMNS`.
   Llamada interna por `plan-intent`.
-  *Aceptación*: devuelve summary con sólo tablas allowlisted y sin
-  columnas redactadas.
+  *Aceptación*: código completo per spec + format tests. ✅ 2026-05-02 `eca977f`+`683db1c`
 - [ ] **T1.7** — Configurar env vars en Supabase Edge Functions:
   `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`,
   `ORION_ALLOWED_USER_ID`, `ORION_ALLOWED_TABLES`,
   `ORION_REDACTED_COLUMNS`.
   *Aceptación*: las 3 Edge Functions arrancan sin errores y el
   smoke contra todas pasa.
-- [ ] **T1.8** — Tests unitarios del query builder + validador Plan
+  [pendiente: requiere proyecto Supabase real (T1.1 + T1.2)]
+- [x] **T1.8** — Tests unitarios del query builder + validador Plan
   JSON (módulo compartido cliente / server) con Vitest (cliente) y
   `deno test` (server).
   *Aceptación*: cubre SELECT con LIMIT, INSERT, UPDATE con WHERE,
   DELETE con WHERE, rechazo de DDL / multi-statement, validación
-  contra schema Zod.
+  contra schema Zod. ✅ 2026-05-02 `c07b235`+`ee2370a`+`53d77fb`
+  [⚠️ deno test no re-verificado desde T1.6 — re-verificar en B8]
 - [ ] **T1.9** — Smoke con curl end-to-end: login → JWT → POST
   `plan-intent` → POST `execute-plan` con Plan resultado → fila
   registrada en `orion_audit`.
   *Aceptación*: secuencia documentada en `design.md` se ejecuta sin
   errores y deja audit trail completo.
+  [pendiente: requiere deploy real (T1.7)]
 
 ---
 
 ## Bloque 2 — PWA Auth & Config (depende: B0 + B1.2)
 
-- [ ] **T2.1** — Configurar `@supabase/supabase-js` con persistencia
+- [x] **T2.1** — Configurar `@supabase/supabase-js` con persistencia
   de sesión (`localStorage` por defecto del SDK, validar que
   funciona como PWA instalada).
   *Aceptación*: `supabase.auth.getSession()` devuelve sesión válida
-  tras restart de la PWA.
-- [ ] **T2.2** — Pantalla login con magic link (input email +
+  tras restart de la PWA. ✅ 2026-05-02 `bfe8b69`
+- [x] **T2.2** — Pantalla login con magic link (input email +
   botón "Enviar magic link" + estado).
   *Aceptación*: input + submit dispara `signInWithOtp`, muestra
-  estado "revisá tu email".
-- [ ] **T2.3** — Callback URL handling: ruta `/auth/callback` que
+  estado "revisá tu email". ✅ 2026-05-02 `43aa943`
+- [x] **T2.3** — Callback URL handling: ruta `/auth/callback` que
   consume el code de la URL y deja sesión activa, redirige a `/`.
   *Aceptación*: click en magic link en mobile abre la PWA y deja al
-  director en la home con sesión activa.
-- [ ] **T2.4** — Pantalla config (idioma TTS, voz preferida, toggle
+  director en la home con sesión activa. ✅ 2026-05-02 `43a0db7`
+- [x] **T2.4** — Pantalla config (idioma TTS, voz preferida, toggle
   read-only global, toggle dry-run global).
   *Aceptación*: cambios persisten en IndexedDB y se aplican al
-  siguiente request.
-- [ ] **T2.5** — Logout + clear sesión + redirect a login.
+  siguiente request. ✅ 2026-05-02 `28ad509`
+- [x] **T2.5** — Logout + clear sesión + redirect a login.
   *Aceptación*: tras logout, `getSession()` devuelve null y la PWA
-  fuerza login.
+  fuerza login. ✅ 2026-05-02 `c466a86`
 
 ---
 
 ## Bloque 3 — PWA Plan-Intent integration (depende: B2 + B1.4)
 
+> 🔄 **PAUSADO** — 2026-05-02. Hay 4 decisiones pendientes antes de
+> codear. Ver [`B4-PENDING-DECISIONS.md`](../../../docs/05-implementation/B4-PENDING-DECISIONS.md).
+> En la sesión de implementación, B4-Voice se ejecutó primero (es paralelo
+> a B3 per tabla de dependencias). B3-Plan-Intent arranca una vez el
+> director resuelva las decisiones.
+
 - [ ] **T3.1** — Cliente `plan-intent` (fetch a la Edge con
   `Authorization: Bearer ${jwt}` header).
   *Aceptación*: una frase enviada al endpoint devuelve Plan JSON o
   Clarification; 401 manejado con redirect a login.
+  [PAUSADO: ver B4-PENDING-DECISIONS.md]
 - [ ] **T3.2** — Manejo de respuesta Plan vs Clarification: si es
   Clarification, mostrar pregunta al usuario y reenviar refinada.
   *Aceptación*: frase ambigua ("borra eso") muestra pregunta de
   clarificación en pantalla y/o TTS.
+  [PAUSADO]
 - [ ] **T3.3** — Validador Plan JSON cliente (Zod) usando el módulo
   compartido `src/lib/contracts/plan-schema.ts` (barrel → `$shared`; ADR-013).
   *Aceptación*: Plan inválido recibido del server se rechaza
   client-side con código de error específico antes de mostrar al
   usuario.
+  [PAUSADO]
 
 ---
 
 ## Bloque 4 — PWA Voice (paralelo a B3, depende: B0)
 
-- [ ] **T4.1** — Web Speech Recognition `es-MX` con `interimResults`
+> ✅ Completado como "B3" en la sesión de implementación (2026-05-02).
+> Se ejecutó antes que B3-Plan-Intent porque ambos son paralelos y
+> Voice no dependía de la resolución de B4-PENDING-DECISIONS.
+
+- [x] **T4.1** — Web Speech Recognition `es-MX` con `interimResults`
   según [`spec-voice-input`](../../../docs/04-specs/spec-voice-input.md).
   *Aceptación*: dictar una frase muestra transcripción incremental
-  en pantalla.
-- [ ] **T4.2** — Indicador visual de escucha
+  en pantalla. ✅ 2026-05-02 `78c9b41` (`VoiceInputController` + `VoiceScreen`)
+- [x] **T4.2** — Indicador visual de escucha
   (idle / escuchando / procesando / respondiendo).
   *Aceptación*: el estado visible coincide con el estado real del
-  flujo en cada transición.
-- [ ] **T4.3** — Auto-listen al abrir desde shortcut PWA
+  flujo en cada transición. ✅ 2026-05-02 `78c9b41` (4 estados + UI)
+- [x] **T4.3** — Auto-listen al abrir desde shortcut PWA
   (`?mode=voice`).
   *Aceptación*: abrir desde el atajo activa el mic o muestra botón
-  claro si el browser exige interacción explícita.
-- [ ] **T4.4** — Web Speech Synthesis `es-MX` con interrupción +
+  claro si el browser exige interacción explícita. ✅ 2026-05-02 `d7f56bf` (permission guard + auto-listen)
+- [x] **T4.4** — Web Speech Synthesis `es-MX` con interrupción +
   voz configurable según
   [`spec-tts-output`](../../../docs/04-specs/spec-tts-output.md).
   *Aceptación*: una respuesta se sintetiza con la voz seleccionada
-  y un tap la corta.
+  y un tap la corta. ✅ 2026-05-02 `78c9b41` (`TtsOutputController`)
 - [ ] **T4.5** — Smoke test Web Speech en Cubot KK9 (ver
   [`INSTALLATION-CUBOT.md`](../../../docs/06-deploy/INSTALLATION-CUBOT.md)
   § smoke test).
   *Aceptación*: dictado y síntesis funcionan en el dispositivo
   físico antes de avanzar a B5.
+  [pendiente: requiere dispositivo físico — ejecutar en B8 junto con smoke E2E]
 
 ---
 

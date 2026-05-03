@@ -62,21 +62,21 @@ describe('TtsOutputController', () => {
     const ctrl = new TtsOutputController();
     await ctrl.speak('hola mundo');
     expect(mockSynth.speak).toHaveBeenCalledOnce();
-    expect(capturedUtterance!.text).toBe('hola mundo');
+    expect(capturedUtterance?.text).toBe('hola mundo');
   });
 
   it('speak() truncates text > 300 chars and appends "más en pantalla"', async () => {
     const ctrl = new TtsOutputController();
     await ctrl.speak('a'.repeat(350));
-    expect(capturedUtterance!.text.length).toBeLessThan(340);
-    expect(capturedUtterance!.text).toContain('más en pantalla');
+    expect(capturedUtterance?.text.length).toBeLessThan(340);
+    expect(capturedUtterance?.text).toContain('más en pantalla');
   });
 
   it('speak() does not truncate text at exactly 300 chars', async () => {
     const ctrl = new TtsOutputController();
     const exact = 'b'.repeat(300);
     await ctrl.speak(exact);
-    expect(capturedUtterance!.text).toBe(exact);
+    expect(capturedUtterance?.text).toBe(exact);
   });
 
   it('speak() cancels previous utterance if already speaking', async () => {
@@ -89,24 +89,24 @@ describe('TtsOutputController', () => {
   it('speak() applies default rate=1.0, pitch=1.0, volume=1.0', async () => {
     const ctrl = new TtsOutputController();
     await ctrl.speak('test');
-    expect(capturedUtterance!.rate).toBe(1.0);
-    expect(capturedUtterance!.pitch).toBe(1.0);
-    expect(capturedUtterance!.volume).toBe(1.0);
+    expect(capturedUtterance?.rate).toBe(1.0);
+    expect(capturedUtterance?.pitch).toBe(1.0);
+    expect(capturedUtterance?.volume).toBe(1.0);
   });
 
   it('speak() respects setDefaultOptions overrides', async () => {
     const ctrl = new TtsOutputController();
     ctrl.setDefaultOptions({ rate: 1.2, pitch: 0.9, volume: 0.8 });
     await ctrl.speak('test');
-    expect(capturedUtterance!.rate).toBe(1.2);
-    expect(capturedUtterance!.pitch).toBe(0.9);
-    expect(capturedUtterance!.volume).toBe(0.8);
+    expect(capturedUtterance?.rate).toBe(1.2);
+    expect(capturedUtterance?.pitch).toBe(0.9);
+    expect(capturedUtterance?.volume).toBe(0.8);
   });
 
   it('speak() sets lang to es-MX on utterance', async () => {
     const ctrl = new TtsOutputController();
     await ctrl.speak('test');
-    expect(capturedUtterance!.lang).toBe('es-MX');
+    expect(capturedUtterance?.lang).toBe('es-MX');
   });
 
   it('speak() emits start then end events', async () => {
@@ -141,7 +141,7 @@ describe('TtsOutputController', () => {
     const ctrl = new TtsOutputController();
     ctrl.selectVoiceForLang('es-MX');
     await ctrl.speak('test');
-    expect(capturedUtterance!.voice).toBe(esMX);
+    expect(capturedUtterance?.voice).toBe(esMX);
   });
 
   it('selectVoiceForLang falls back to es-* prefix when exact not available', async () => {
@@ -150,7 +150,7 @@ describe('TtsOutputController', () => {
     const ctrl = new TtsOutputController();
     ctrl.selectVoiceForLang('es-MX');
     await ctrl.speak('test');
-    expect(capturedUtterance!.voice).toBe(esES);
+    expect(capturedUtterance?.voice).toBe(esES);
   });
 
   it('speak() resolves immediately and emits unavailable error when synth missing', async () => {

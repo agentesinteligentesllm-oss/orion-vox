@@ -50,24 +50,24 @@ describe('VoiceInputController', () => {
 
   it('configures SpeechRecognition with M1 settings (es-MX, continuous:false, interimResults:true, maxAlternatives:1)', () => {
     new VoiceInputController();
-    expect(_mock!.lang).toBe('es-MX');
-    expect(_mock!.continuous).toBe(false);
-    expect(_mock!.interimResults).toBe(true);
-    expect(_mock!.maxAlternatives).toBe(1);
+    expect(_mock?.lang).toBe('es-MX');
+    expect(_mock?.continuous).toBe(false);
+    expect(_mock?.interimResults).toBe(true);
+    expect(_mock?.maxAlternatives).toBe(1);
   });
 
   it('start() calls recognition.start', async () => {
     const ctrl = new VoiceInputController();
     await ctrl.start();
-    expect(_mock!.start).toHaveBeenCalledOnce();
+    expect(_mock?.start).toHaveBeenCalledOnce();
   });
 
   it('start() is no-op when not idle', async () => {
     const ctrl = new VoiceInputController();
     await ctrl.start();
-    _mock!.onstart?.(); // → listening
+    _mock?.onstart?.(); // → listening
     await ctrl.start(); // second call while listening
-    expect(_mock!.start).toHaveBeenCalledOnce();
+    expect(_mock?.start).toHaveBeenCalledOnce();
   });
 
   it('onstart → state: listening + emits state event', async () => {
@@ -75,7 +75,7 @@ describe('VoiceInputController', () => {
     const states: VoiceInputState[] = [];
     ctrl.on('state', (s) => states.push(s));
     await ctrl.start();
-    _mock!.onstart?.();
+    _mock?.onstart?.();
     expect(ctrl.getState()).toBe('listening');
     expect(states).toContain('listening');
   });
@@ -86,7 +86,7 @@ describe('VoiceInputController', () => {
     const results: string[] = [];
     ctrl.on('interim', (t) => interims.push(t));
     ctrl.on('result', (t) => results.push(t));
-    _mock!.onresult?.(resultEvent('hola mun', false));
+    _mock?.onresult?.(resultEvent('hola mun', false));
     expect(interims).toEqual(['hola mun']);
     expect(results).toHaveLength(0);
   });
@@ -97,7 +97,7 @@ describe('VoiceInputController', () => {
     const states: VoiceInputState[] = [];
     ctrl.on('result', (t) => results.push(t));
     ctrl.on('state', (s) => states.push(s));
-    _mock!.onresult?.(resultEvent('hola mundo', true));
+    _mock?.onresult?.(resultEvent('hola mundo', true));
     expect(states).toContain('processing');
     expect(results).toEqual(['hola mundo']);
   });
@@ -105,13 +105,13 @@ describe('VoiceInputController', () => {
   it('stop() calls recognition.stop', () => {
     const ctrl = new VoiceInputController();
     ctrl.stop();
-    expect(_mock!.stop).toHaveBeenCalledOnce();
+    expect(_mock?.stop).toHaveBeenCalledOnce();
   });
 
   it('cancel() calls abort and state → idle', () => {
     const ctrl = new VoiceInputController();
     ctrl.cancel();
-    expect(_mock!.abort).toHaveBeenCalledOnce();
+    expect(_mock?.abort).toHaveBeenCalledOnce();
     expect(ctrl.getState()).toBe('idle');
   });
 
@@ -119,7 +119,7 @@ describe('VoiceInputController', () => {
     const ctrl = new VoiceInputController();
     const errors: VoiceInputError[] = [];
     ctrl.on('error', (e) => errors.push(e));
-    _mock!.onerror?.(errorEvent('aborted'));
+    _mock?.onerror?.(errorEvent('aborted'));
     expect(ctrl.getState()).toBe('idle');
     expect(errors).toHaveLength(0);
   });
@@ -128,7 +128,7 @@ describe('VoiceInputController', () => {
     const ctrl = new VoiceInputController();
     const errors: VoiceInputError[] = [];
     ctrl.on('error', (e) => errors.push(e));
-    _mock!.onerror?.(errorEvent('not-allowed'));
+    _mock?.onerror?.(errorEvent('not-allowed'));
     expect(ctrl.getState()).toBe('error');
     expect(errors[0].code).toBe('not-allowed');
     expect(errors[0].message).toContain('permiso');
@@ -138,7 +138,7 @@ describe('VoiceInputController', () => {
     const ctrl = new VoiceInputController();
     const errors: VoiceInputError[] = [];
     ctrl.on('error', (e) => errors.push(e));
-    _mock!.onerror?.(errorEvent('no-speech'));
+    _mock?.onerror?.(errorEvent('no-speech'));
     expect(ctrl.getState()).toBe('error');
     expect(errors[0].code).toBe('no-speech');
     expect(errors[0].message).toContain('escuché');
@@ -146,14 +146,14 @@ describe('VoiceInputController', () => {
 
   it('onend while listening → state: idle (no result received)', () => {
     const ctrl = new VoiceInputController();
-    _mock!.onstart?.(); // → listening
-    _mock!.onend?.(); // → idle (no result)
+    _mock?.onstart?.(); // → listening
+    _mock?.onend?.(); // → idle (no result)
     expect(ctrl.getState()).toBe('idle');
   });
 
   it('resetToIdle() forces state to idle', () => {
     const ctrl = new VoiceInputController();
-    _mock!.onresult?.(resultEvent('texto', true)); // → processing
+    _mock?.onresult?.(resultEvent('texto', true)); // → processing
     ctrl.resetToIdle();
     expect(ctrl.getState()).toBe('idle');
   });

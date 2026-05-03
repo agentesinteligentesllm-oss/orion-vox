@@ -47,6 +47,7 @@ Detalle del workflow en [`../openspec/README.md`](../openspec/README.md).
 ```
 docs/
 ├── INDEX.md ............................. (este archivo)
+├── HANDOFF.md ........................... Traspaso Wave 4 → Codex 5.5 (estado B0-B3)
 │
 ├── 00-constitution/ ..................... [constitutional]
 │   ├── CONSTITUTION.md .................. 12 principios innegociables
@@ -109,10 +110,11 @@ docs/
 │
 ├── 05-implementation/ ................... [M1+]
 │   ├── ROADMAP.md ....................... Roadmap M1 → M2 → M3
-│   ├── M1-MVP.md ........................ Implementación detallada del MVP
+│   ├── M1-MVP.md ........................ Implementación detallada del MVP + progreso B0-B3
 │   ├── M2-HARDENING.md .................. Plan de hardening
 │   ├── M3-FEATURES.md ................... Features post-hardening
-│   └── TECHNICAL-DEBT.md ................ Deuda técnica registrada y plan de pago
+│   ├── TECHNICAL-DEBT.md ................ Deuda técnica registrada y plan de pago
+│   └── B4-PENDING-DECISIONS.md .......... 4 decisiones bloqueantes para arrancar B4
 │
 ├── 06-operations/ ....................... [M1+]
 │   ├── SETUP-SUPABASE.md ................ Setup inicial del proyecto Supabase
@@ -148,8 +150,64 @@ openspec/
         └── state.yaml ................... Estado del DAG del change
 ```
 
+## Estructura de código — módulos creados en B0-B3
+
+> Esta sección refleja el estado post-Wave 4 (2026-05-02).
+> B0–B3 completos; B4 pausado pendiente de decisiones.
+
+```
+src/
+├── App.svelte                          — shell, routing por router.mode
+├── components/
+│   ├── VoiceScreen.svelte              — pantalla voz (B3: estados idle/listening/processing/error)
+│   ├── LoginWizard.svelte              — login magic link (B2)
+│   ├── Settings.svelte                 — config IndexedDB (B2: idioma, dry-run, read-only)
+│   └── ConfigWrapper.svelte            — wrapper config + settings (B2)
+└── lib/
+    ├── auth-store.svelte.ts            — sesión Supabase, Svelte 5 $state (B2)
+    ├── router.svelte.ts                — routing reactivo mode+firstTime (B2)
+    ├── supabase.ts                     — cliente Supabase anon (B2)
+    ├── voice/
+    │   ├── recognition.ts              — VoiceInputController: Web Speech API, es-MX (B3)
+    │   └── synthesis.ts                — TtsOutputController: Web Speech Synthesis, es-MX (B3)
+    └── storage/
+        ├── local-store.ts              — IndexedDB wrapper con fake-indexeddb en test (B2)
+        └── types.ts                    — tipos Idioma, Settings, AuditEntry (B2)
+
+supabase/
+├── functions/
+│   ├── _shared/
+│   │   ├── plan-schema.ts              — Zod schema Plan JSON v1.0, shared PWA↔Deno (B1/ADR-013)
+│   │   ├── query-builder.ts            — SQL builder parametrizado con allowlist (B1)
+│   │   └── redact.ts                   — redactSqlParams para filters + values (B1)
+│   ├── plan-intent/index.ts            — Edge: JWT → schema-summary → Gemini → Plan JSON (B1)
+│   ├── execute-plan/index.ts           — Edge: JWT → allowlist → SQL → audit → result (B1)
+│   └── schema-summary/index.ts        — Edge interna: pg_catalog filtrado + markdown (B1)
+└── migrations/
+    ├── 001_orion_audit.sql             — DDL orion_audit 14 cols + índices (B1)
+    └── 002_orion_audit_add_source_nullable_plan.sql — col 15: source + plan_json nullable (B1)
+
+tests/
+├── unit/
+│   ├── recognition.test.ts             — 14 tests VoiceInputController (B3)
+│   └── synthesis.test.ts               — 16 tests TtsOutputController (B3)
+├── e2e/
+│   ├── b2-auth-config.test.ts          — flows auth, config, logout, guards (B2)
+│   └── b3-voice-screen.test.ts         — 8 tests VoiceScreen + permisos (B3)
+└── contracts/
+    ├── plan-schema.test.ts             — Zod schema, 12 ops, 11 fixtures (B1)
+    ├── import-guard.test.ts            — guard no-cross-imports src/ ↔ supabase/ (B1)
+    ├── redact.test.ts                  — redactSqlParams cross-runtime (B1)
+    └── schema-summary-format.test.ts  — markdown formatter (B1)
+```
+
+> **Módulos pendientes** (a crear en B4+):
+> - `src/lib/api/plan-intent-client.ts` — HTTP client con JWT (B4.1)
+> - `src/components/PlanPreview.svelte` — human-readable plan display (B4.3)
+
 ## Próximos pasos sugeridos
 
-1. Revisar `docs/02-architecture/OVERVIEW.md` como puerta de entrada técnica.
-2. Avanzar el change `openspec/changes/m1-mvp/` hasta `apply` y luego `archive`.
-3. Mantener `CHANGELOG.md` y `TECHNICAL-DEBT.md` actualizados con cada PR.
+1. Resolver decisiones en `docs/05-implementation/B4-PENDING-DECISIONS.md`.
+2. Revisar `docs/HANDOFF.md` como puerta de entrada para Codex.
+3. Avanzar el change `openspec/changes/m1-mvp/` hasta `apply` y luego `archive`.
+4. Mantener `CHANGELOG.md` y `TECHNICAL-DEBT.md` actualizados con cada PR.

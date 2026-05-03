@@ -190,9 +190,28 @@ Reglas (vienen de `openspec/README.md`):
 
 | Milestone | Estado | Change OpenSpec | Próxima acción |
 |-----------|--------|------------------|----------------|
-| M1 | en curso (preparación) | `openspec/changes/m1-mvp/` (in-progress) | Crear ADR-012 (framework PWA) y arrancar Bloque 1 de tasks |
+| M1 | **en curso — B0-B3 done, B4 pausado** | `openspec/changes/m1-mvp/` (in-progress) | Resolver decisiones B4 → codear B4-B8 |
 | M2 | bloqueado por M1 | — (no creado) | Esperar gates de transición M1 → M2 |
 | M3 | bloqueado por M2 | — (no creado) | Esperar gates de transición M2 → M3 |
+
+### Progreso de bloques M1 (Wave 4 — 2026-05-02)
+
+> Nota: durante la implementación, B4-Voice fue ejecutado antes que
+> B3-Plan-Intent (permitido por diseño: ambos son paralelos según la
+> tabla de dependencias de `tasks.md`). El orden de commits refleja
+> esta secuencia real.
+
+| Bloque tasks.md | Bloque impl | Estado | Commit cierre | Fecha |
+|-----------------|-------------|--------|---------------|-------|
+| B0 Setup | B0 | ✅ done | `45b0707` | 2026-05-01 |
+| B1 Supabase backend | B1 | ✅ código (⚠️ sin deploy) | `c07b235` | 2026-05-02 |
+| B2 Auth/Config | B2 | ✅ done | `138f4e3` | 2026-05-02 |
+| B4 Voice (paralelo) | B3 | ✅ done | `5ebb458` | 2026-05-02 |
+| B3 Plan-Intent client | B4 | 🔄 pausado — ver [B4-PENDING-DECISIONS.md](./B4-PENDING-DECISIONS.md) | — | — |
+| B5 Confirmation | B5 | ⏳ pendiente | — | — |
+| B6 Execute/Audit | B6 | ⏳ pendiente | — | — |
+| B7 Atajos/PWA | B7 | ⏳ pendiente | — | — |
+| B8 Deploy/Validación | B8 | ⏳ pendiente | — | — |
 
 ---
 

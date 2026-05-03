@@ -27,6 +27,96 @@ cambio de contenido (esos cambios viven en el historial de commits).
 
 ## [Unreleased]
 
+> Cambios de documentación en vuelo que aún no cierran un bloque de implementación.
+
+---
+
+## [0.3.0] — 2026-05-02 — B3: Voice screen completo
+
+Cierre del bloque B3 de implementación. Módulos de voz completos con
+tests exhaustivos y VoiceScreen integrada.
+
+### Added
+
+#### Voice modules (`src/lib/voice/`)
+- `recognition.ts` — `VoiceInputController`: wraps Web Speech API
+  (`SpeechRecognition` / `webkitSpeechRecognition`), configurado `es-MX`,
+  `continuous:false`, `interimResults:true`, `maxAlternatives:1`. 4 estados
+  (`idle | listening | processing | error`), 7 códigos de error con mensajes
+  en español, EventEmitter tipado.
+- `synthesis.ts` — `TtsOutputController`: wraps `SpeechSynthesis`, selección
+  de voz (exact `es-MX` → prefix `es-*` → default), truncación a 300 chars con
+  `"…más en pantalla"`, cancel-before-speak, opciones configurables
+  (rate/pitch/volume).
+
+#### Componente (`src/components/`)
+- `VoiceScreen.svelte` — pantalla voz completa: 4 estados visuales
+  (idle/listening/processing/error), auto-listen cuando `navigator.permissions`
+  reporta `'granted'`, educación sobre permisos en estado `'prompt'`, keyboard
+  fallback auto-habilitado en estado `'denied'`, botón cancelar, gear → settings.
+- `App.svelte` — integrado `VoiceScreen` en routing (mode=voice).
+
+#### Tests
+- `tests/unit/recognition.test.ts` — 14 tests: config M1, start/stop/cancel,
+  eventos, 7 códigos de error, caso `unavailable`.
+- `tests/unit/synthesis.test.ts` — 16 tests: isAvailable, speak con texto/
+  truncación/cancel-before/opciones/eventos, selectVoiceForLang, unavailable.
+- `tests/e2e/b3-voice-screen.test.ts` — 8 tests: idle UI, keyboard fallback,
+  keyboard submit, gear navigation, no-permissions path, permission
+  prompt/denied/granted.
+
+### Fixed
+- Guard `!navigator.permissions` (truthy) en lugar de
+  `!('permissions' in navigator)` — jsdom define la propiedad como `undefined`,
+  haciendo que `in` devuelva `true` incorrectamente.
+- Svelte 5 jsdom state updates requieren `waitFor` post-`fireEvent.click`.
+
+### Notes
+- 168/168 Vitest verde al cierre de B3.
+- Commits: `78c9b41` (B3.1-B3.3) + `d7f56bf` (B3.4) + `5ebb458` (B3.6).
+
+---
+
+## [0.2.0] — 2026-05-02 — B2: Auth, Config e IndexedDB completo
+
+Cierre del bloque B2 de implementación. PWA con autenticación Supabase
+funcional, routing reactivo, settings persistidos en IndexedDB y tests E2E.
+
+### Added
+
+#### Auth & routing (`src/lib/`)
+- `auth-store.svelte.ts` — sesión Supabase reactiva con Svelte 5 `$state`,
+  PKCE-safe: `onAuthStateChange` + `getSession()` al init.
+- `router.svelte.ts` — routing por `mode: 'voice' | 'config'` + `firstTime`
+  flag + `URLSearchParams` sync.
+- `supabase.ts` — cliente Supabase con `anon_key` (pública por diseño).
+
+#### Componentes (`src/components/`)
+- `LoginWizard.svelte` — login magic link con input email + estado
+  (idle/sending/sent/error).
+- `ConfigWrapper.svelte` — wrapper routing config/settings.
+- `Settings.svelte` — config completa: idioma TTS, voz preferida, read-only
+  global, dry-run global. Persistida en IndexedDB.
+
+#### Storage (`src/lib/storage/`)
+- `local-store.ts` — IndexedDB wrapper con `idb@8`, `getSetting`/`setSetting`/
+  `wipeAll`. Compatible con `fake-indexeddb` en tests.
+- `types.ts` — tipos `Idioma`, `Settings`, `AuditEntry`.
+
+#### Logout
+- Flujo logout: `supabase.auth.signOut()` + `localStore.wipeAll()` + reset
+  router → pantalla login.
+
+#### Tests
+- `tests/e2e/b2-auth-config.test.ts` — flujos auth + config + logout + guards.
+
+### Notes
+- 128/128 Vitest verde al cierre de B2.
+- Commits: `bfe8b69`→`ded96d1` (B2.1-B2.prep) + `bfe8b69`, `8fbff8a`,
+  `79cd318`, `43aa943`, `43a0db7`, `28ad509`, `c466a86`, `138f4e3`.
+
+---
+
 ### Added
 - `supabase/functions/_shared/redact.ts` — `redactSqlParams` extraída a shared; cubre ahora `filters[].value` además de `plan.values` (INSERT/UPDATE). Param ordering documentado por operación.
 - `tests/fixtures/plans/valid/12-update-with-redacted-filter.json` y `13-select-with-redacted-filter.json` — fixtures para cobertura de redacción en filtros.
