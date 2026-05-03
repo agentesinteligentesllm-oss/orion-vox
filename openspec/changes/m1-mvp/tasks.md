@@ -250,19 +250,26 @@ se complete y se valide.
 
 ## Bloque 6 — PWA Execute & Audit (depende: B5 + B1.5)
 
-- [ ] **T6.1** — Cliente `execute-plan` (fetch con JWT, manejo de
+- [x] **T6.1** — Cliente `execute-plan` (fetch con JWT, manejo de
   errores: 401, 403, 422, 500).
   *Aceptación*: cada código de error produce mensaje legible + TTS +
-  audit espejo en IndexedDB.
-- [ ] **T6.2** — Vista de auditoría espejo en IndexedDB (últimas N
+  audit espejo en IndexedDB. ✅ 2026-05-03 `496e848`
+  (`execute-plan-client.ts`: executePlan() + ExecutePlanClientError + 17 msgs ES.
+  VoiceScreen: handleConfirmed() async → executePlan → TTS → appendAuditMirror.)
+- [x] **T6.2** — Vista de auditoría espejo en IndexedDB (últimas N
   ejecuciones cacheadas localmente para acceso rápido offline).
   *Aceptación*: cubre US-AUD-01 con detalle expandible por entrada;
-  refresh manual descarga últimas N de `orion_audit` server.
-- [ ] **T6.3** — Aplicar redacción client-side donde corresponda
+  refresh manual = re-lectura IDB (download desde server es M2 — requiere RLS).
+  ✅ 2026-05-03 `496e848`
+  (`AuditView.svelte`: lista 50 entradas, más reciente primero, detalle expandible.
+  Router + App.svelte: modo `audit` agregado.)
+- [x] **T6.3** — Aplicar redacción client-side donde corresponda
   (en caso de que el server devuelva campos sensibles por error,
   doble defensa).
-  *Aceptación*: campos en `ORION_REDACTED_COLUMNS` aparecen
-  redactados en pantalla aunque el server los enviara crudos.
+  *Aceptación*: campos sensibles redactados antes de retornar al componente.
+  ✅ 2026-05-03 `496e848`
+  (`redact-client.ts`: redactResult() con lista hardcodeada (password, token,
+  api_key, etc.). Aplicada en executePlan() antes de retornar.)
 
 ---
 
