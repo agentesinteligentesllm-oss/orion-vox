@@ -168,7 +168,7 @@ se complete y se valide.
   - **B4.4** `ae1ce17`: clarification flow completo — `tts.speak(question)`
     + `tts.on('end')` auto-restart recognition + `buildClarifiedPrompt()`
     + re-envío a `callPlanIntent`. 10 tests unit.
-  - **B4.5** 🔲 pendiente: tests E2E del flow completo (ver HANDOFF.md §3).
+  - **B4.5** ✅ `7299218`: 5 tests E2E del flow completo voice→plan-intent→PlanPreview/clarification.
 - [x] **T3.3** — Validador Plan JSON cliente (Zod) usando el módulo
   compartido `src/lib/contracts/plan-schema.ts` (barrel → `$shared`; ADR-013).
   *Aceptación*: Plan inválido recibido del server se rechaza

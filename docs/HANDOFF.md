@@ -3,7 +3,7 @@ title: HANDOFF — Documento maestro de orquestación
 status: stable
 milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-03 (B4.4 + Wave 8)
+last-reviewed: 2026-05-03 (B4.5 + Wave 9)
 purpose: |
   Único documento de entrada para cualquier sesión nueva (Claude o
   Codex) que retome el proyecto. Se actualiza al cierre de cada bloque
@@ -34,17 +34,16 @@ related:
   sirve de puente entre Gemini (Android) y un proyecto Supabase del
   director, usando voz natural en español. Cubot KingKong 9 es el
   dispositivo target.
-- **Avance M1**: ~72% (B0-B3 done, B4.1+B4.2+B4.3+B4.4 done, B4.5
-  pendiente, B5-B8 pendientes).
-- **Próxima acción concreta**: arrancar B4.5 (Tests E2E del flow completo
-  voice → plan-intent → PlanPreview / clarification). Ver § 3.
-- **Decisiones B4 resueltas**: las 4 divergencias detectadas en pre-read
-  ya están cerradas en
-  [`05-implementation/B4-PENDING-DECISIONS.md`](./05-implementation/B4-PENDING-DECISIONS.md).
-- **Working tree LIMPIO** al cierre de B4.4 + Wave 8 (commit `ae1ce17`
-  código + docs Wave 8). Verificar con `git status` antes de tocar nada.
+- **Avance M1**: ~80% (B0-B4 completos, B5-B8 pendientes).
+- **Próxima acción concreta**: arrancar B5 (Confirmation Modal — modal
+  táctil para writes + doble confirmación + cancel audit). Ver §3.
+- **Bloque B4 cerrado**: B4.1→B4.5 todos ✅. Spec de B5 estable en
+  [`04-specs/spec-confirmation-flow.md`](./04-specs/spec-confirmation-flow.md).
+  Leer COMPLETO antes de tocar código.
+- **Working tree LIMPIO** al cierre de B4.5 + Wave 9 (commit `7299218`
+  código + docs Wave 9). Verificar con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
-  (ver § 8). Gate `check` 0 errores desde B4.2 (`71daedf`).
+  (ver §8). Gate `check` 0 errores desde B4.2 (`71daedf`).
 
 ---
 
@@ -63,14 +62,14 @@ related:
 | **B4.2** | VoiceScreen → plan-intent: `callPlanIntent()`, loading state, 14 códigos error ES, cards plan/clarification, `plan-intent-messages.ts` + 9 tests | ✅ done | `b959081` |
 | **B4.3** | `PlanPreview.svelte`: render legible humano del Plan JSON — verb label + tabla + frase + aviso confirmación writes. 10 tests unit. | ✅ done | `e5bb9ff` |
 | **B4.4** | Clarification flow: `tts.speak(question)` + `tts.on('end')` auto-restart + `buildClarifiedPrompt()` + re-envío. 10 tests unit. | ✅ done | `ae1ce17` |
-| **B4.5** | Tests E2E del flow completo voice → plan-intent → PlanPreview / clarification | 🔲 pendiente | — |
+| **B4.5** | Tests E2E del flow completo voice → plan-intent → PlanPreview / clarification | ✅ done | `7299218` |
 | **B5** | Confirmation Modal flow | 🔲 pendiente | — |
 | **B6** | Execute & Audit cliente | 🔲 pendiente | — |
 | **B7** | Atajos Android + Instalación PWA | 🔲 pendiente | — |
 | **B8** | Deploy + Smoke E2E Cubot KK9 | 🔲 pendiente | — |
 
-**Tests al cierre B4.4**: 208/208 Vitest verde (198 previos + 10 nuevos
-de `b44-clarification-flow.test.ts`). Gate `check` verde (0 errores).
+**Tests al cierre B4.5**: 213/213 Vitest verde (208 previos + 5 nuevos
+de `b45-voice-plan-flow.test.ts`). Gate `check` verde (0 errores).
 Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 (re-verificación obligatoria pre-deploy en B8).
 
@@ -86,96 +85,149 @@ Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 2. **Verificar últimos commits**: `git log --oneline -5` debe mostrar
    (más recientes primero):
    ```
-   [hash Wave 8]  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
-   ae1ce17        B4.4: clarification flow TTS + re-listen + buildClarifiedPrompt
+   [hash Wave 9]  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
+   7299218        B4.5: tests E2E B4 voice→plan-intent
+   e01f293        docs: HANDOFF sincronizado post-B4.4 (Wave 8)
+   ae1ce17        B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
    ec57693        docs: HANDOFF sincronizado post-B4.3 (Wave 7)
-   e5bb9ff        B4.3: PlanPreview component human-readable
-   ac664df        docs: HANDOFF sincronizado post-B4.2 (Wave 6)
    ```
-3. **No hay specs nuevas que leer para B4.5** — es un bloque de tests
-   E2E, no de features nuevas. El código a testear (B4.2+B4.3+B4.4)
-   ya está commiteado y estable.
+3. **LEER spec completa ANTES de codear**: `docs/04-specs/spec-confirmation-flow.md`.
+   Es el único documento autoritativo para B5. El HANDOFF resume los puntos
+   clave, pero la spec tiene los contratos exactos, los estados del modal,
+   el manejo de errores y las restricciones M1.
 4. Si el working tree NO está limpio, alguien dejó trabajo en curso.
    Pausar y reportar al director antes de tocar nada.
 
-### Estado B4.4 (✅ done `ae1ce17`)
+### Estado B4 (✅ cerrado completamente)
 
-Lo que entrega B4.4 (clarification flow completo):
-- **`VoiceScreen.svelte`** — 5 cambios principales:
-  1. `clarificationOriginalPrompt: string | null = $state(null)` — guarda el
-     prompt original del primer turno para pasarlo a `buildClarifiedPrompt()`.
-  2. `awaitingClarificationListen: boolean = $state(false)` — flag que impide
-     doble-start de recognition (cuando usuario toca mic mientras TTS habla).
-  3. `recognition.on('result')` bifurcado: si `clarificationOriginalPrompt !== null`,
-     concatena con `buildClarifiedPrompt()`, resetea flag, relanza `callPlanIntent`.
-  4. `tts.on('end')` + `tts.on('error')` (filtro `'interrupted'`): disparan
-     `recognition.start()` automáticamente cuando TTS termina la pregunta.
-  5. Template extendido: card de clarificación visible durante re-listen
-     (`voiceState === 'idle' || clarificationOriginalPrompt !== null`).
-     Label "Escuchá la pregunta…" y hint "Respondé con tu voz…" condicionales.
-- **`tests/unit/b44-clarification-flow.test.ts`** — 10 tests unit con
-  mock TTS completo (`_handlers` map + `speak`/`cancel` vi.fn).
-- Gates al cierre: 208/208 Vitest verde, `check` 0 errores, `lint` 0 errores.
+| Sub-bloque | Commit | Qué entrega |
+|------------|--------|-------------|
+| B4.1 | `d1e8a94` | `plan-intent-client.ts` + 8 tests unit |
+| B4.2 | `b959081` | VoiceScreen integrado + 14 mensajes error ES + 9 tests |
+| B4.3 | `e5bb9ff` | `PlanPreview.svelte` render legible + 10 tests unit |
+| B4.4 | `ae1ce17` | Clarification flow TTS + auto-restart + buildClarifiedPrompt + 10 tests unit |
+| B4.5 | `7299218` | 5 tests E2E flow completo voice→plan-intent→PlanPreview |
 
-**Gotchas críticos B4.4 — NO ignorar al escribir B4.5**:
+**Gotchas de B4 que persisten en B5 (no perder de vista)**:
 
-1. **`tts.cancel()` emite `onerror`, NO `onend`**: cuando TTS es cancelado
-   (ej: usuario toca mic), `SpeechSynthesis.cancel()` dispara
-   `utter.onerror` con `ev.error === 'canceled'` → mapeado a `code: 'interrupted'`
-   en `synthesis.ts`. El handler `tts.on('error')` en `VoiceScreen` filtra
-   `interrupted` y NO llama `recognition.start()`. En tests E2E que simulen
-   cancel, emitir `'error'` con `{ code: 'interrupted' }`, nunca `'end'`.
+1. **`toBeDisabled()` / `toBeEnabled()` NO disponibles**: usar
+   `expect((btn as HTMLButtonElement).disabled).toBe(true/false)`.
+2. **Mock TTS patrón B4.4**: `_handlers` map público + helper `emit(inst, event, value?)`.
+   El mock de B3 (`on = vi.fn()`) no sirve para tests que necesiten disparar eventos TTS.
+3. **`recognition.resetToIdle()` es no-op en mocks**: emitir `emit(rec, 'state', 'idle')`
+   manualmente si el test necesita que `voiceState` vuelva a idle.
+4. **`tts.cancel()` emite `'error'` con `code:'interrupted'`**, NO `'end'`. En tests
+   que simulen cancel de TTS: `emit(tts, 'error', { code: 'interrupted' })`.
 
-2. **`recognition.resetToIdle()` es no-op en el mock de los tests**:
-   El mock de `VoiceInputController` tiene `resetToIdle = vi.fn()` (no emite
-   eventos). En producción, `resetToIdle()` llama `_setState('idle')` → emite
-   `'state': 'idle'`. En tests donde el código llama `resetToIdle()` en el
-   `finally` de `callPlanIntent`, el `voiceState` en el componente NO cambia
-   automáticamente. Si el test necesita que `voiceState` vuelva a `idle`,
-   emitir manualmente: `emit(rec, 'state', 'idle')` después de que
-   `tts.speak` haya sido llamado.
+---
 
-3. **`toBeDisabled()` / `toBeEnabled()` NO disponibles**: `@testing-library/jest-dom`
-   no está cargado en este entorno. Usar:
-   `expect((btn as HTMLButtonElement).disabled).toBe(false)`.
-   No usar `toBeDisabled()`, `toBeEnabled()`, `toHaveClass()`, etc.
+### B5 — Confirmation Modal flow (🔲 pendiente, PRÓXIMO BLOQUE)
 
-4. **Mock TTS necesita `_handlers` map (patrón B4.4, no B3)**:
-   El mock de B3 (`b3-voice-screen.test.ts`) usa `on = vi.fn()` — no almacena
-   handlers y no permite emitir eventos. En B4.5 los handlers de `tts.on('end')`
-   y `tts.on('error')` son esenciales. **Usar el patrón de
-   `tests/unit/b44-clarification-flow.test.ts`**: el mock almacena handlers en
-   `_handlers: Record<string, ((v: unknown) => void)[]>` y los expone vía el
-   helper `emit(inst, event, value?)`.
+**Spec autoritativa**: `docs/04-specs/spec-confirmation-flow.md` (leer completa).
 
-### B4.5 — Tests E2E del flow completo B4 (🔲 pendiente)
+**Qué construye B5** (5 tareas de `openspec/changes/m1-mvp/tasks.md` §Bloque 5):
 
-**Archivo a crear**: `tests/e2e/b45-voice-plan-flow.test.ts`
+| Tarea | Descripción |
+|-------|-------------|
+| T5.1 | `ConfirmationModal.svelte` — modal táctil full-screen para writes |
+| T5.2 | Preview SQL legible (operación, tabla, filtros, valores, SQL preview colapsable) |
+| T5.3 | Doble confirmación para `delete` sin filtros / estimación > 100 filas |
+| T5.4 | Cancel auditado — fire-and-forget POST a `execute-plan` con `rejected_by_user: true` |
+| T5.5 | Toggle `dry_run` global en `Settings.svelte` (verificar si ya existe en B2) |
 
-**Stack de mocks necesario** (mismo patrón base que `b44-clarification-flow.test.ts`):
-- `VoiceInputController`: mock con `_handlers` + `_lastInst` + `start/stop/cancel/resetToIdle` vi.fn
-- `TtsOutputController`: mock con `_handlers` + `_lastInst` + `speak/cancel` vi.fn
-- `supabase`: mock mínimo auth `onAuthStateChange`
-- `plan-intent-client`: `requestPlanIntent` vi.fn + `buildClarifiedPrompt` real o vi.fn
+**Archivos a crear / modificar**:
 
-**Escenarios mínimos para B4.5** (5 tests):
+```
+src/
+├── components/
+│   └── ConfirmationModal.svelte    ← NUEVO (T5.1 + T5.2 + T5.3)
+└── lib/
+    └── api/
+        └── execute-plan-client.ts  ← NUEVO mínimo (T5.4 cancel audit)
+                                       B6 lo extiende con el path confirmar
 
-| # | Nombre | Descripción |
-|---|--------|-------------|
-| B4.5.1 | Golden path voz → plan SELECT | `emit(rec, 'result', '...')` → `requestPlanIntent` retorna `kind:'plan'` → `PlanPreview` visible con texto legible (`/Voy a buscar/`) |
-| B4.5.2 | Keyboard fallback → plan SELECT | Tipear en input de texto si existe → mismo resultado que voz → `PlanPreview` visible |
-| B4.5.3 | Clarification E2E completo | `result` → `kind:'clarification'` → `tts.speak` llamado → emit `tts 'end'` → `recognition.start` → segundo `result` → `requestPlanIntent` con `buildClarifiedPrompt` → `kind:'plan'` → `PlanPreview` visible |
-| B4.5.4 | Error card visible tras error red | `result` → `requestPlanIntent` rechaza con `PlanIntentClientError({ code: 'network_error' })` → card error visible en español |
-| B4.5.5 | Cancel limpia estado | `result` → `requestPlanIntent` pendiente (promise sin resolver) → clic "Cancelar" → card desaparece → estado vuelve a idle |
+src/components/VoiceScreen.svelte   ← MODIFICAR: trigger modal cuando
+                                      planResponse.kind === 'plan' &&
+                                      shouldConfirm(plan)
+src/components/Settings.svelte      ← VERIFICAR si dry_run toggle existe;
+                                      si no, AGREGAR (T5.5)
 
-**Commit sugerido**: `B4.5: tests E2E B4 voice→plan-intent`
+tests/unit/b51-confirmation-modal.test.ts   ← NUEVO (modal unit)
+tests/unit/b52-double-confirm.test.ts       ← NUEVO (doble confirmación)
+tests/e2e/b53-confirmation-flow.test.ts     ← NUEVO (E2E: show modal → confirm/cancel)
+```
 
-**Reglas duras para B4.5**:
-- B4 NO ejecuta plan — solo recibe Plan JSON y previsualiza. Ejecución es B6.
-- No agregar features nuevas a `VoiceScreen.svelte` en B4.5. Solo tests.
-- Gates antes de commit: `npm run check` + `npm run lint` + `npm run test`.
-- Al cerrar B4.5: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6,
-  §19) y commitear docs Wave 9 ANTES del siguiente bloque.
+**Interfaz del modal** (de spec §3.2):
+
+```ts
+// src/components/ConfirmationModal.svelte — props
+interface ConfirmationModalProps {
+  plan: Plan;
+  sqlPreview: string;          // generado client-side (aproximación)
+  warnings: string[];          // ej: 'Sin filtros: afecta toda la tabla.'
+  requiresDouble: boolean;     // true para delete sin filtros / estimación > 100
+  onConfirm(): void;
+  onCancel(): void;
+}
+```
+
+**Funciones helper** (definir en el mismo componente o en `src/lib/confirmation-utils.ts`):
+
+```ts
+function shouldConfirm(plan: Plan): boolean {
+  return plan.operation !== 'select';
+}
+
+function requiresDoubleConfirm(plan: Plan): boolean {
+  if (plan.operation === 'delete') {
+    if (!plan.filters || plan.filters.length === 0) return true;
+  }
+  return false;
+  // M1: sin estimación de filas — esa lógica es M2 (dry_run automático)
+}
+```
+
+**UX innegociable** (spec §3.3 + §7):
+- Modal **full-screen** en mobile. No popup pequeño.
+- Botón **Cancelar default focused**. `Enter` **NO confirma**.
+- Header: azul `insert`, naranja `update`, rojo `delete`.
+- **Sin filas estimadas** en M1 (el `dry_run` automático pre-modal es M2).
+- Countdown visible a 50s; auto-cancel a 60s (audita como `rejected_by_user`).
+- Botón Confirmar se deshabilita tras primer tap (evita doble request).
+- Tap fuera del modal NO cierra (full-screen no tiene "fuera").
+
+**Cancel audit — fire-and-forget** (spec §3.6):
+
+```ts
+// execute-plan-client.ts mínimo para B5
+async function auditCancel(plan: Plan, accessToken: string): Promise<void> {
+  fetch(EXECUTE_PLAN_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan, rejected_by_user: true }),
+  }).catch((err) => console.warn('audit cancel failed', err));
+  // Fire-and-forget: si falla, el cancel local procede igual. No bloquea UX.
+}
+```
+
+**Integración en VoiceScreen.svelte** — cambio principal:
+
+Cuando `planResponse?.kind === 'plan'` y `shouldConfirm(planResponse.plan) === true`:
+- En lugar de solo mostrar `PlanPreview`, mostrar `ConfirmationModal` encima.
+- `onConfirm` → de momento emitir event / llamar callback (B6 conecta la ejecución real).
+- `onCancel` → llamar `auditCancel(plan, token)` (fire-and-forget) + limpiar estado.
+
+**Reglas duras para B5**:
+- B5 NO ejecuta el plan contra Postgres — la ejecución es B6 (T6.1).
+- B5 solo hace la UI del modal + el fire-and-forget del cancel audit.
+- `ConfirmationModal` es un componente puro: no llama directamente a la Edge
+  desde adentro; la lógica de llamada vive en VoiceScreen / callbacks.
+- Gates antes de commit: `npm run check` + `npm run lint` + `npx vitest run`.
+- Sub-bloques sugeridos:
+  - **B5.1** — `ConfirmationModal.svelte` completo + tests unit (T5.1+T5.2+T5.3).
+  - **B5.2** — Integración en VoiceScreen + `execute-plan-client.ts` minimal + T5.5 + tests E2E (T5.4).
+- Al cerrar B5: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6, §19)
+  y commitear docs Wave 10 ANTES del siguiente bloque.
 
 ---
 
@@ -197,7 +249,7 @@ Resumen:
 
 ## 5. Working tree LIMPIO (verificación obligatoria al abrir sesión)
 
-Estado al cierre de B4.4 + Wave 8: **working tree limpio, todo commiteado**.
+Estado al cierre de B4.5 + Wave 9: **working tree limpio, todo commiteado**.
 
 Verificar siempre al abrir sesión:
 
@@ -205,11 +257,11 @@ Verificar siempre al abrir sesión:
 git status         # debe decir: nothing to commit, working tree clean
 git log --oneline -5
 # debe mostrar (más recientes primero):
-#   [hash Wave 8]  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
-#   ae1ce17        B4.4: clarification flow TTS + re-listen + buildClarifiedPrompt
+#   [hash Wave 9]  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
+#   7299218        B4.5: tests E2E B4 voice→plan-intent
+#   e01f293        docs: HANDOFF sincronizado post-B4.4 (Wave 8)
+#   ae1ce17        B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
 #   ec57693        docs: HANDOFF sincronizado post-B4.3 (Wave 7)
-#   e5bb9ff        B4.3: PlanPreview component human-readable
-#   ac664df        docs: HANDOFF sincronizado post-B4.2 (Wave 6)
 ```
 
 Si el working tree NO está limpio, alguien dejó trabajo en curso.
@@ -276,7 +328,8 @@ tests/
 │   └── b44-clarification-flow.test.ts — 10 tests clarification flow TTS+re-listen (B4.4) ✅ ae1ce17
 ├── e2e/
 │   ├── b2-auth-config.test.ts       — flows auth, config, logout (B2) ✅
-│   └── b3-voice-screen.test.ts      — 8 tests VoiceScreen UI (B3) ✅
+│   ├── b3-voice-screen.test.ts      — 8 tests VoiceScreen UI (B3) ✅
+│   └── b45-voice-plan-flow.test.ts  — 5 tests E2E voice→plan-intent→PlanPreview (B4.5) ✅ 7299218
 ├── contracts/
 │   ├── plan-schema.test.ts          — Vitest schema Zod (B1) ✅
 │   ├── import-guard.test.ts         — guard no-imports cross-layer (B1) ✅
@@ -400,7 +453,8 @@ npm run lint                 # biome check
 npm run format               # biome format --write
 
 # Tests
-npm run test                 # todos los Vitest
+# NOTA: 'npm run test' NO existe como script — usar npx vitest run directamente
+npx vitest run               # todos los Vitest (equivale a 'npm run test')
 npm run test:contracts       # cross-runtime: Vitest + deno test (requiere Deno)
 npx vitest run tests/unit/   # solo unit
 npx vitest run tests/e2e/    # solo E2E
@@ -416,10 +470,10 @@ deno --version
 deno test --allow-read supabase/functions/tests/
 ```
 
-**Estado esperado tras T3.1 commit**:
+**Estado esperado tras cada commit de implementación**:
 - `npm run check` → 0 errores
 - `npm run lint` → 0 errores
-- `npm run test:contracts` → todos verde (Vitest + Deno)
+- `npx vitest run` → todos verde
 
 ---
 
@@ -578,3 +632,4 @@ confiable entre sesiones.**
 | Wave 6 | B4.2 commiteado (trabajo pendiente de sesión anterior): fix gate check pre-existente (`71daedf`) + VoiceScreen integración plan-intent completa (`b959081`). HANDOFF sincronizado. | 2026-05-03 | `b959081` |
 | Wave 7 | B4.3: PlanPreview.svelte (render legible humano) + 10 tests unit + VoiceScreen actualizado. HANDOFF sincronizado. Gates: 198/198 verde. | 2026-05-03 | `e5bb9ff` |
 | Wave 8 | B4.4: clarification flow completo (TTS speaks question + auto-restart recognition + buildClarifiedPrompt + re-submit) + 10 tests unit. HANDOFF sincronizado para B4.5. Gates: 208/208 verde. | 2026-05-03 | `ae1ce17` |
+| Wave 9 | B4.5: 5 tests E2E flow completo voice→plan-intent→PlanPreview/clarification. Bloque B4 cerrado. HANDOFF sincronizado para B5 (Confirmation Modal). Corrección: `npm run test` no existe → `npx vitest run`. Gates: 213/213 verde. | 2026-05-03 | `7299218` |
