@@ -1,4 +1,10 @@
 <script lang="ts">
+import {
+  PlanIntentClientError,
+  type PlanIntentResponse,
+  requestPlanIntent,
+} from '../lib/api/plan-intent-client.ts';
+import { planIntentErrorToMessage } from '../lib/api/plan-intent-messages.ts';
 import { authStore } from '../lib/auth-store.svelte.ts';
 import { router } from '../lib/router.svelte.ts';
 import { localStore } from '../lib/storage/local-store.ts';
@@ -20,12 +26,19 @@ let errorInfo = $state<VoiceInputError | null>(null);
 let showKeyboard = $state(false);
 let keyboardInput = $state('');
 let micPermission = $state<PermissionState | null>(null);
+let planResponse = $state<PlanIntentResponse | null>(null);
+let planError = $state<string | null>(null);
 
 recognition.on('state', (s) => {
   voiceState = s;
-  if (s === 'idle' || s === 'listening') {
+  if (s === 'listening') {
     interimText = '';
-    if (s === 'idle') errorInfo = null;
+    planResponse = null;
+    planError = null;
+    errorInfo = null;
+  } else if (s === 'idle') {
+    interimText = '';
+    errorInfo = null;
   }
 });
 recognition.on('interim', (text) => {
@@ -34,14 +47,48 @@ recognition.on('interim', (text) => {
 recognition.on('result', async (text) => {
   lastResult = text;
   interimText = '';
-  // B4+: send to plan-intent here. Placeholder: echo via TTS.
-  await tts.speak(text);
-  recognition.resetToIdle();
+  await callPlanIntent(text);
 });
 recognition.on('error', (err) => {
   errorInfo = err;
   if (err.code === 'unavailable' || err.code === 'not-allowed') showKeyboard = true;
 });
+
+async function callPlanIntent(text: string): Promise<void> {
+  planResponse = null;
+  planError = null;
+  voiceState = 'processing';
+
+  const token = authStore.session?.access_token;
+  if (!token) {
+    recognition.resetToIdle();
+    router.navigate('config', { firstTime: true });
+    return;
+  }
+
+  try {
+    const response = await requestPlanIntent({
+      accessToken: token,
+      userPrompt: text,
+      onUnauthorized: () => {
+        router.navigate('config', { firstTime: true });
+      },
+    });
+    planResponse = response;
+  } catch (err) {
+    const clientErr =
+      err instanceof PlanIntentClientError
+        ? err
+        : new PlanIntentClientError({ code: 'internal', message: 'Error interno.' });
+    const isAuthError = clientErr.code === 'unauthorized' || clientErr.code === 'invalid_token';
+    if (!isAuthError) {
+      planError = planIntentErrorToMessage(clientErr);
+      tts.speak(`Hubo un error: ${planError}`);
+    }
+  } finally {
+    recognition.resetToIdle();
+  }
+}
 
 $effect(() => {
   localStore.getSetting<Idioma>('idioma').then((lang) => {
@@ -93,16 +140,17 @@ async function handleMicTap() {
 function handleCancel() {
   recognition.cancel();
   tts.cancel();
+  planResponse = null;
+  planError = null;
 }
 
-function handleKeyboardSubmit(e: SubmitEvent) {
+async function handleKeyboardSubmit(e: SubmitEvent) {
   e.preventDefault();
   const text = keyboardInput.trim();
   if (!text) return;
   keyboardInput = '';
   lastResult = text;
-  // B4+: send to plan-intent here. Placeholder: echo via TTS.
-  tts.speak(text);
+  await callPlanIntent(text);
 }
 
 function goToSettings() {
@@ -200,6 +248,35 @@ function goToSettings() {
         </p>
       {/if}
     </div>
+
+    <!-- Error de plan-intent (B4.2) -->
+    {#if planError && voiceState === 'idle'}
+      <div class="flex w-full max-w-sm items-start gap-3 rounded-xl border border-red-900 bg-red-950/30 px-4 py-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+        <p class="text-sm text-red-300">{planError}</p>
+      </div>
+    {/if}
+
+    <!-- Respuesta del plan (B4.2 — B4.3 reemplaza el interior con PlanPreview.svelte) -->
+    {#if planResponse && voiceState === 'idle'}
+      {#if planResponse.kind === 'plan'}
+        <div class="w-full max-w-sm rounded-xl border border-indigo-900 bg-indigo-950/30 px-4 py-3">
+          <p class="text-xs font-medium uppercase tracking-wide text-indigo-400">
+            {planResponse.plan.operation}
+            <span class="mx-1 text-indigo-600" aria-hidden="true">→</span>
+            {planResponse.plan.table}
+          </p>
+          <p class="mt-1 text-xs text-gray-500">Plan recibido. Confirmación pendiente.</p>
+        </div>
+      {:else}
+        <div class="w-full max-w-sm rounded-xl border border-amber-900 bg-amber-950/30 px-4 py-3">
+          <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-amber-400">Necesito más información</p>
+          <p class="text-sm text-gray-200">{planResponse.clarification.question}</p>
+        </div>
+      {/if}
+    {/if}
 
     <!-- Cancel button (only when active) -->
     {#if voiceState === 'listening' || voiceState === 'processing'}

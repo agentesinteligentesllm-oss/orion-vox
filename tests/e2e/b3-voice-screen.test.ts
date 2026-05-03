@@ -47,24 +47,43 @@ vi.mock('../../src/lib/voice/synthesis.ts', () => {
   return { TtsOutputController };
 });
 
+vi.mock('../../src/lib/api/plan-intent-client.ts', () => {
+  class PlanIntentClientError extends Error {
+    code: string;
+    constructor(params: { code: string; message: string }) {
+      super(params.message);
+      this.name = 'PlanIntentClientError';
+      this.code = params.code;
+    }
+  }
+  return {
+    PlanIntentClientError,
+    requestPlanIntent: vi.fn().mockResolvedValue({
+      ok: true,
+      kind: 'plan',
+      plan: { version: '1.0', operation: 'select', table: 'tareas', limit: 100 },
+      schema_hash: 'hash-test-abc',
+      plan_intent_audit_id: 'audit-id-001',
+      duration_ms: 80,
+    }),
+    buildClarifiedPrompt: vi.fn((a: string, b: string) => `${a}\n\nAclaración del usuario: ${b}`),
+    PLAN_INTENT_CLIENT_VERSION: '0.0.0',
+    PLAN_INTENT_REFRESH_SCHEMA_SETTING: 'planIntent.refreshSchemaNext',
+  };
+});
+
 import type { Session } from '@supabase/supabase-js';
 import VoiceScreen from '../../src/components/VoiceScreen.svelte';
+import { requestPlanIntent } from '../../src/lib/api/plan-intent-client.ts';
 import { authStore } from '../../src/lib/auth-store.svelte.ts';
 import { router } from '../../src/lib/router.svelte.ts';
 import { localStore } from '../../src/lib/storage/local-store.ts';
 import { VoiceInputController } from '../../src/lib/voice/recognition.ts';
-import { TtsOutputController } from '../../src/lib/voice/synthesis.ts';
 
 function getRecognition(): ReturnType<typeof vi.fn> & { start: ReturnType<typeof vi.fn> } {
   return (VoiceInputController as unknown as Record<string, unknown>)._lastInst as ReturnType<
     typeof vi.fn
   > & { start: ReturnType<typeof vi.fn> };
-}
-
-function getTts(): { speak: ReturnType<typeof vi.fn> } {
-  return (TtsOutputController as unknown as Record<string, unknown>)._lastInst as {
-    speak: ReturnType<typeof vi.fn>;
-  };
 }
 
 const mockSession = {
@@ -104,13 +123,17 @@ describe('B3 — VoiceScreen UI + voice flow', () => {
     await waitFor(() => expect(screen.getByPlaceholderText('Escribí tu comando…')).toBeTruthy());
   });
 
-  it('keyboard submit: tts.speak called with entered text', async () => {
+  it('keyboard submit: llama a plan-intent con el texto ingresado (B4.2)', async () => {
     render(VoiceScreen);
     fireEvent.click(screen.getByText('Usar teclado'));
     const input = await screen.findByPlaceholderText('Escribí tu comando…');
     fireEvent.input(input, { target: { value: 'listar clientes' } });
     fireEvent.submit(input.closest('form') as HTMLFormElement);
-    await waitFor(() => expect(getTts().speak).toHaveBeenCalledWith('listar clientes'));
+    await waitFor(() =>
+      expect(requestPlanIntent).toHaveBeenCalledWith(
+        expect.objectContaining({ userPrompt: 'listar clientes' }),
+      ),
+    );
   });
 
   it('gear icon navigates to config', async () => {
