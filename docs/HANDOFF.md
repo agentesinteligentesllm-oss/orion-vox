@@ -40,6 +40,10 @@ related:
 - **Bloque B4 cerrado**: B4.1→B4.5 todos ✅. Spec de B5 estable en
   [`04-specs/spec-confirmation-flow.md`](./04-specs/spec-confirmation-flow.md).
   Leer COMPLETO antes de tocar código.
+- **⚡ Pivote de testing (ADR-014)**: a partir de B5 la cobertura cambia a
+  mínima intencional. B6 es excepción obligatoria (2 tests mínimos — toca
+  Postgres real). Ver [`03-adr/ADR-014-testing-strategy-pivot.md`](./03-adr/ADR-014-testing-strategy-pivot.md)
+  para el razonamiento completo, la tabla por bloque y cómo revertir.
 - **Working tree LIMPIO** al cierre de B4.5 + Wave 9 (commit `7299218`
   código + docs Wave 9). Verificar con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
@@ -517,6 +521,7 @@ Patrones que ya costaron retrabajo. Evitar:
 | ADR-011 | Español como idioma primario |
 | ADR-012 | Svelte 5 + Vite + TypeScript como framework PWA |
 | ADR-013 | Shared plan-schema entre PWA y Deno sin monorepo |
+| ADR-014 | **Pivote de testing a partir de B5** — cobertura mínima (B5/B7/B8), 2 tests obligatorios en B6. Commit de referencia: `0e6bbfc`. |
 
 Índice navegable: `docs/03-adr/ADR-INDEX.md`.
 

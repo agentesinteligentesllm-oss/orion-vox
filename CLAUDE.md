@@ -71,6 +71,9 @@ Mapas C4 ASCII y DDL canónico en `docs/02-architecture/OVERVIEW.md` y
 - **ADR-010**: Schema-summary autogenerado desde `pg_catalog`.
 - **ADR-011**: Español como idioma primario.
 - **ADR-012**: Svelte 5 + Vite + TypeScript como framework PWA.
+- **ADR-014**: **⚡ Pivote de testing a partir de B5** — cobertura mínima
+  intencional para B5/B7/B8; 2 tests obligatorios en B6 (toca Postgres real).
+  Baseline: commit `0e6bbfc`, 213 tests. [Aceptado en Wave 9.]
 
 Índice navegable: `docs/03-adr/ADR-INDEX.md`.
 
@@ -123,11 +126,15 @@ Mapas C4 ASCII y DDL canónico en `docs/02-architecture/OVERVIEW.md` y
 Lista completa en `docs/00-constitution/CONSTITUTION.md` y checklist
 ejecutable en `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 
-## Estado Actual (Wave 5 — 2026-05-03)
+## Estado Actual (Wave 9 — 2026-05-03)
 
 > **Fuente de verdad operativa**: `docs/HANDOFF.md`. Este resumen es
 > referencia rápida; el HANDOFF tiene el estado exacto, working tree
 > y próximo paso.
+>
+> **⚡ Decisión de sesión (ADR-014)**: a partir de B5 la cobertura de tests
+> cambia a mínima intencional. B6 es excepción (2 tests mínimos obligatorios).
+> Ver `docs/03-adr/ADR-014-testing-strategy-pivot.md`.
 
 ### Implementación
 
@@ -138,19 +145,23 @@ ejecutable en `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 | B2 | PWA Auth & Config: auth store, routing, LoginWizard, Settings.svelte, IndexedDB, logout | ✅ | `138f4e3` |
 | B3 | Voice screen: VoiceInputController, TtsOutputController, VoiceScreen, unit tests (30), E2E tests (8) | ✅ | `5ebb458` |
 | Wave 4 | Sync de docs post B0-B3 + B4 decisiones formalizadas | ✅ | `91b3bb1` |
-| B4.1 / T3.1 | Plan-Intent client (`src/lib/api/plan-intent-client.ts`) + tests + audit fixes (acentos ES + Biome format) | ✅ | `d1e8a94` |
-| B4.2-B4.5 | VoiceScreen integration + PlanPreview + Clarification flow + E2E | ⏳ pendiente | — |
+| B4.1 / T3.1 | Plan-Intent client (`src/lib/api/plan-intent-client.ts`) + tests + audit fixes | ✅ | `d1e8a94` |
+| B4.2 | VoiceScreen → plan-intent: callPlanIntent + 14 errores ES + cards | ✅ | `b959081` |
+| B4.3 | PlanPreview.svelte — render legible humano Plan JSON | ✅ | `e5bb9ff` |
+| B4.4 | Clarification flow: TTS + auto-restart + buildClarifiedPrompt | ✅ | `ae1ce17` |
+| B4.5 | Tests E2E flow completo voice→plan-intent→PlanPreview | ✅ | `7299218` |
 | B5–B8 | Confirmation, Execute, Atajos, Deploy | ⏳ pendiente | — |
 
-**Tests al cierre B4.1**: 176/176 Vitest verde (168 previos + 8 nuevos
-del cliente plan-intent). Deno tests no re-verificados desde `c07b235`
+**Tests al cierre B4.5**: 213/213 Vitest verde. Gate `check` 0 errores.
+Gate `lint` 0 errores. Deno tests no re-verificados desde `c07b235`
 (re-verificación obligatoria pre-deploy en B8).
 
-**Próximo paso**: arrancar B4.2 (integración VoiceScreen → plan-intent
-con loading state). Ver `docs/HANDOFF.md` para detalle del estado.
+**Próximo paso**: arrancar B5 (Confirmation Modal). Leer
+`docs/04-specs/spec-confirmation-flow.md` completo antes de codear.
+Ver `docs/HANDOFF.md` §3 para detalle exacto del bloque.
 
-**Decisiones B4 ya resueltas** (cerradas el 2026-05-03): ver
-`docs/05-implementation/B4-PENDING-DECISIONS.md`.
+**⚡ Testing desde B5**: cobertura mínima intencional (ADR-014).
+B6 es excepción (2 tests obligatorios — toca Postgres real).
 
 ### Estructura del código fuente (post B0-B3)
 
@@ -175,7 +186,8 @@ src/
     ├── contracts/
     │   └── plan-schema.ts        ← B1 (barrel desde $shared)
     └── api/
-        └── plan-intent-client.ts ← B4.1 🔄 sin commit
+        ├── plan-intent-client.ts    ← B4.1 ✅
+        └── plan-intent-messages.ts  ← B4.2 ✅
 
 supabase/functions/
 ├── _shared/{plan-schema,query-builder,redact,schema-summary-core,audit,retries}.ts  ← B1
@@ -185,7 +197,7 @@ supabase/functions/
 ├── tests/                        ← B1
 └── deno.json                     ← B1
 
-tests/{unit,e2e,contracts,smoke,fixtures}/  ← B1, B2, B3, B4.1
+tests/{unit,e2e,contracts,smoke,fixtures}/  ← B1, B2, B3, B4.x (213 tests)
 supabase/migrations/001,002.sql   ← B1
 ```
 
@@ -206,8 +218,9 @@ Detalle: `docs/05-implementation/TECHNICAL-DEBT.md`.
 **Documento maestro único** de orquestación entre sesiones:
 `docs/HANDOFF.md`. Cualquier sesión nueva debe leerlo PRIMERO.
 
-Decisiones B4 (resueltas 2026-05-03):
-`docs/05-implementation/B4-PENDING-DECISIONS.md`.
+**Decisión de estrategia de testing (ADR-014)**:
+`docs/03-adr/ADR-014-testing-strategy-pivot.md`. Aplica a B5-B8.
+Commit de referencia: `0e6bbfc`. Baseline de 213 tests en B0-B4.
 
 ## Tribunal de IAs
 
@@ -226,17 +239,17 @@ Protocolo completo en `docs/00-constitution/GOVERNANCE.md` y
 
 ## Documentos clave para retomar contexto rápido
 
-1. `docs/HANDOFF.md` — **puerta de entrada para Codex**. Estado
-   completo al cierre de Wave 4.
-2. `docs/05-implementation/B4-PENDING-DECISIONS.md` — 4 decisiones
-   que bloquean B4. Resolver primero.
-3. `docs/INDEX.md` — índice navegable de toda la documentación.
-4. `docs/02-architecture/OVERVIEW.md` — vista C4 + capas + ADRs
-   referenciados.
-5. `docs/02-architecture/DATA-FLOW.md` — flujos READ/WRITE/CANCEL/ERROR.
-6. `docs/02-architecture/SECURITY-MODEL.md` — modelo de seguridad
-   por milestone (M1 base segura, M2 hardening).
-7. `docs/03-adr/ADR-INDEX.md` — todas las decisiones.
+1. `docs/HANDOFF.md` — **puerta de entrada obligatoria**. Estado completo
+   al cierre de Wave 9 (B4.5 done, B5 próximo).
+2. `docs/03-adr/ADR-014-testing-strategy-pivot.md` — **⚡ decisión de
+   testing**: leer antes de B5. Define cobertura por bloque y cómo revertir.
+3. `docs/04-specs/spec-confirmation-flow.md` — spec autoritativa de B5.
+   Leer completa antes de tocar código de B5.
+4. `docs/INDEX.md` — índice navegable de toda la documentación.
+5. `docs/02-architecture/OVERVIEW.md` — vista C4 + capas + ADRs.
+6. `docs/02-architecture/DATA-FLOW.md` — flujos READ/WRITE/CANCEL/ERROR.
+7. `docs/02-architecture/SECURITY-MODEL.md` — modelo de seguridad por milestone.
+8. `docs/03-adr/ADR-INDEX.md` — todas las decisiones (14 ADRs).
 8. `docs/05-implementation/M1-MVP.md` — scope y criterios M1.
 9. `docs/05-implementation/M2-HARDENING.md` — scope M2 (5 items
    residuales).

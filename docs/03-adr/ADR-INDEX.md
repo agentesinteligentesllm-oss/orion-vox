@@ -3,7 +3,7 @@ title: Índice de Architecture Decision Records (ADRs)
 status: stable
 milestone: constitutional
 owner: orion-vox
-last-reviewed: 2026-05-01
+last-reviewed: 2026-05-03
 related:
   - ../00-constitution/CONSTITUTION.md
   - ../00-constitution/CHANGE-PROTOCOL.md
@@ -37,6 +37,7 @@ línea de código.
 | ADR-011 | [Español como idioma primario](./ADR-011-spanish-as-primary-language.md) | accepted | 2026-05-01 | M1, M2, M3 |
 | ADR-012 | [Framework PWA — Svelte 5 + Vite + TypeScript](./ADR-012-framework-pwa.md) | accepted | 2026-05-01 | M1, M2, M3 |
 | ADR-013 | [Estrategia de esquema compartido Plan JSON entre PWA y Edge Functions](./ADR-013-shared-plan-schema-strategy.md) | accepted | 2026-05-01 | M1, M2, M3 |
+| ADR-014 | [Pivote de estrategia de testing — cobertura mínima a partir de B5](./ADR-014-testing-strategy-pivot.md) | accepted | 2026-05-03 | M1 (B5-B8) |
 
 ---
 
@@ -74,7 +75,7 @@ línea de código.
 
 ## ADRs reservados a futuro (sin crear todavía)
 
-- **ADR-014+** — Reservados para decisiones que surjan durante M1/M2/M3.
+- **ADR-015+** — Reservados para decisiones que surjan durante M1/M2/M3.
 
 No se crean ADRs especulativos. Si una decisión no está sobre la mesa, no
 tiene ADR.
