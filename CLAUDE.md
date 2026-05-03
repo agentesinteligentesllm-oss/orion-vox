@@ -126,7 +126,7 @@ Mapas C4 ASCII y DDL canónico en `docs/02-architecture/OVERVIEW.md` y
 Lista completa en `docs/00-constitution/CONSTITUTION.md` y checklist
 ejecutable en `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 
-## Estado Actual (Wave 9 — 2026-05-03)
+## Estado Actual (Wave 10 — 2026-05-03)
 
 > **Fuente de verdad operativa**: `docs/HANDOFF.md`. Este resumen es
 > referencia rápida; el HANDOFF tiene el estado exacto, working tree

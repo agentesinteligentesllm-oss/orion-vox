@@ -3,7 +3,7 @@ title: HANDOFF — Documento maestro de orquestación
 status: stable
 milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-03 (B4.5 + Wave 9)
+last-reviewed: 2026-05-03 (B4.5 + ADR-014 Wave 10)
 purpose: |
   Único documento de entrada para cualquier sesión nueva (Claude o
   Codex) que retome el proyecto. Se actualiza al cierre de cada bloque
@@ -44,8 +44,8 @@ related:
   mínima intencional. B6 es excepción obligatoria (2 tests mínimos — toca
   Postgres real). Ver [`03-adr/ADR-014-testing-strategy-pivot.md`](./03-adr/ADR-014-testing-strategy-pivot.md)
   para el razonamiento completo, la tabla por bloque y cómo revertir.
-- **Working tree LIMPIO** al cierre de B4.5 + Wave 9 (commit `7299218`
-  código + docs Wave 9). Verificar con `git status` antes de tocar nada.
+- **Working tree LIMPIO** al cierre de ADR-014 + Wave 10 (commit `d3d8c0a`
+  docs Wave 10). Verificar con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
   (ver §8). Gate `check` 0 errores desde B4.2 (`71daedf`).
 
@@ -89,12 +89,14 @@ Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 2. **Verificar últimos commits**: `git log --oneline -5` debe mostrar
    (más recientes primero):
    ```
-   [hash Wave 9]  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
-   7299218        B4.5: tests E2E B4 voice→plan-intent
-   e01f293        docs: HANDOFF sincronizado post-B4.4 (Wave 8)
-   ae1ce17        B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
-   ec57693        docs: HANDOFF sincronizado post-B4.3 (Wave 7)
+   [hash]   docs: … Wave 10 …   ← el top debe ser un commit docs de Wave 10
+   0e6bbfc  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
+   7299218  B4.5: tests E2E B4 voice→plan-intent
+   e01f293  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
+   ae1ce17  B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
    ```
+   El hash exacto del top puede variar si hubo hotfixes de docs en Wave 10;
+   lo que importa es que el mensaje mencione "Wave 10" y el working tree esté limpio.
 3. **LEER spec completa ANTES de codear**: `docs/04-specs/spec-confirmation-flow.md`.
    Es el único documento autoritativo para B5. El HANDOFF resume los puntos
    clave, pero la spec tiene los contratos exactos, los estados del modal,
@@ -231,7 +233,7 @@ Cuando `planResponse?.kind === 'plan'` y `shouldConfirm(planResponse.plan) === t
   - **B5.1** — `ConfirmationModal.svelte` completo + tests unit (T5.1+T5.2+T5.3).
   - **B5.2** — Integración en VoiceScreen + `execute-plan-client.ts` minimal + T5.5 + tests E2E (T5.4).
 - Al cerrar B5: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6, §19)
-  y commitear docs Wave 10 ANTES del siguiente bloque.
+  y commitear docs Wave 11 ANTES del siguiente bloque.
 
 ---
 
@@ -253,7 +255,7 @@ Resumen:
 
 ## 5. Working tree LIMPIO (verificación obligatoria al abrir sesión)
 
-Estado al cierre de B4.5 + Wave 9: **working tree limpio, todo commiteado**.
+Estado al cierre de ADR-014 + Wave 10: **working tree limpio, todo commiteado**.
 
 Verificar siempre al abrir sesión:
 
@@ -261,11 +263,11 @@ Verificar siempre al abrir sesión:
 git status         # debe decir: nothing to commit, working tree clean
 git log --oneline -5
 # debe mostrar (más recientes primero):
-#   [hash Wave 9]  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
-#   7299218        B4.5: tests E2E B4 voice→plan-intent
-#   e01f293        docs: HANDOFF sincronizado post-B4.4 (Wave 8)
-#   ae1ce17        B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
-#   ec57693        docs: HANDOFF sincronizado post-B4.3 (Wave 7)
+#   [hash]   docs: … Wave 10 …  ← top = docs Wave 10 (hash puede variar por hotfixes)
+#   0e6bbfc  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
+#   7299218  B4.5: tests E2E B4 voice→plan-intent
+#   e01f293  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
+#   ae1ce17  B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
 ```
 
 Si el working tree NO está limpio, alguien dejó trabajo en curso.
@@ -551,7 +553,7 @@ Detalle: `docs/05-implementation/TECHNICAL-DEBT.md`.
 | **Estado y próximo paso** | **Este archivo (HANDOFF.md)** |
 | Contexto general del proyecto | `CLAUDE.md` raíz |
 | Índice navegable de toda la doc | `docs/INDEX.md` |
-| Decisiones arquitectónicas | `docs/03-adr/ADR-INDEX.md` (13 ADRs) |
+| Decisiones arquitectónicas | `docs/03-adr/ADR-INDEX.md` (14 ADRs) |
 | Specs técnicas | `docs/04-specs/SPEC-INDEX.md` (14 specs) |
 | Mapa de arquitectura C4 | `docs/02-architecture/OVERVIEW.md` |
 | Sequence diagrams READ/WRITE/CANCEL/ERROR | `docs/02-architecture/DATA-FLOW.md` |
@@ -637,4 +639,5 @@ confiable entre sesiones.**
 | Wave 6 | B4.2 commiteado (trabajo pendiente de sesión anterior): fix gate check pre-existente (`71daedf`) + VoiceScreen integración plan-intent completa (`b959081`). HANDOFF sincronizado. | 2026-05-03 | `b959081` |
 | Wave 7 | B4.3: PlanPreview.svelte (render legible humano) + 10 tests unit + VoiceScreen actualizado. HANDOFF sincronizado. Gates: 198/198 verde. | 2026-05-03 | `e5bb9ff` |
 | Wave 8 | B4.4: clarification flow completo (TTS speaks question + auto-restart recognition + buildClarifiedPrompt + re-submit) + 10 tests unit. HANDOFF sincronizado para B4.5. Gates: 208/208 verde. | 2026-05-03 | `ae1ce17` |
-| Wave 9 | B4.5: 5 tests E2E flow completo voice→plan-intent→PlanPreview/clarification. Bloque B4 cerrado. HANDOFF sincronizado para B5 (Confirmation Modal). Corrección: `npm run test` no existe → `npx vitest run`. Gates: 213/213 verde. | 2026-05-03 | `7299218` |
+| Wave 9 | B4.5: 5 tests E2E flow completo voice→plan-intent→PlanPreview/clarification. Bloque B4 cerrado. HANDOFF sincronizado para B5 (Confirmation Modal). Corrección: `npm run test` no existe → `npx vitest run`. Gates: 213/213 verde. | 2026-05-03 | `0e6bbfc` |
+| Wave 10 | ADR-014 formalizado (pivote de testing B5-B8 — cobertura mínima intencional, excepción B6). HANDOFF + CLAUDE.md + ADR-INDEX.md sincronizados. Baseline: 213 tests, commit `0e6bbfc`. Hotfix Wave 10: referencias de Wave y git log corregidas en HANDOFF §1, §3, §5, §15, §19. | 2026-05-03 | `d3d8c0a` |
