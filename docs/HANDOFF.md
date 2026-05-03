@@ -3,7 +3,7 @@ title: HANDOFF — Documento maestro de orquestación
 status: stable
 milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-03 (B4.5 + ADR-014 Wave 10)
+last-reviewed: 2026-05-03 (B5 Wave 11)
 purpose: |
   Único documento de entrada para cualquier sesión nueva (Claude o
   Codex) que retome el proyecto. Se actualiza al cierre de cada bloque
@@ -34,18 +34,18 @@ related:
   sirve de puente entre Gemini (Android) y un proyecto Supabase del
   director, usando voz natural en español. Cubot KingKong 9 es el
   dispositivo target.
-- **Avance M1**: ~80% (B0-B4 completos, B5-B8 pendientes).
-- **Próxima acción concreta**: arrancar B5 (Confirmation Modal — modal
-  táctil para writes + doble confirmación + cancel audit). Ver §3.
-- **Bloque B4 cerrado**: B4.1→B4.5 todos ✅. Spec de B5 estable en
+- **Avance M1**: ~90% (B0-B5 completos, B6-B8 pendientes).
+- **Próxima acción concreta**: arrancar B6 (Execute & Audit cliente —
+  wiring real de `execute-plan` + audit mirror IndexedDB). Ver §3.
+- **Bloque B5 cerrado**: ConfirmationModal + confirmation-utils +
+  execute-plan-client stub + VoiceScreen integrado + 2 tests E2E.
+  Commit `3c3b926`. Spec autoritativa:
   [`04-specs/spec-confirmation-flow.md`](./04-specs/spec-confirmation-flow.md).
-  Leer COMPLETO antes de tocar código.
 - **⚡ Pivote de testing (ADR-014)**: a partir de B5 la cobertura cambia a
-  mínima intencional. B6 es excepción obligatoria (2 tests mínimos — toca
-  Postgres real). Ver [`03-adr/ADR-014-testing-strategy-pivot.md`](./03-adr/ADR-014-testing-strategy-pivot.md)
-  para el razonamiento completo, la tabla por bloque y cómo revertir.
-- **Working tree LIMPIO** al cierre de ADR-014 + Wave 10 (commit `d3d8c0a`
-  docs Wave 10). Verificar con `git status` antes de tocar nada.
+  mínima intencional. **B6 es excepción obligatoria (2 tests mínimos — toca
+  Postgres real)**. Ver [`03-adr/ADR-014-testing-strategy-pivot.md`](./03-adr/ADR-014-testing-strategy-pivot.md).
+- **Working tree LIMPIO** al cierre de B5 + Wave 11 (commit docs Wave 11).
+  Verificar con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
   (ver §8). Gate `check` 0 errores desde B4.2 (`71daedf`).
 
@@ -67,15 +67,15 @@ related:
 | **B4.3** | `PlanPreview.svelte`: render legible humano del Plan JSON — verb label + tabla + frase + aviso confirmación writes. 10 tests unit. | ✅ done | `e5bb9ff` |
 | **B4.4** | Clarification flow: `tts.speak(question)` + `tts.on('end')` auto-restart + `buildClarifiedPrompt()` + re-envío. 10 tests unit. | ✅ done | `ae1ce17` |
 | **B4.5** | Tests E2E del flow completo voice → plan-intent → PlanPreview / clarification | ✅ done | `7299218` |
-| **B5** | Confirmation Modal flow | 🔲 pendiente | — |
+| **B5** | Confirmation Modal flow (ConfirmationModal + confirmation-utils + execute-plan-client stub + VoiceScreen integrado) | ✅ done | `3c3b926` |
 | **B6** | Execute & Audit cliente | 🔲 pendiente | — |
 | **B7** | Atajos Android + Instalación PWA | 🔲 pendiente | — |
 | **B8** | Deploy + Smoke E2E Cubot KK9 | 🔲 pendiente | — |
 
-**Tests al cierre B4.5**: 213/213 Vitest verde (208 previos + 5 nuevos
-de `b45-voice-plan-flow.test.ts`). Gate `check` verde (0 errores).
-Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
-(re-verificación obligatoria pre-deploy en B8).
+**Tests al cierre B5**: 218/218 Vitest verde (213 previos + 2 nuevos
+de `b53-confirmation-flow.test.ts` + 3 import-guard auto por archivos nuevos).
+Gate `check` verde (0 errores). Gate `lint` verde (0 errores). Deno tests
+no re-verificados desde `c07b235` (re-verificación obligatoria pre-deploy en B8).
 
 ---
 
@@ -89,34 +89,31 @@ Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 2. **Verificar últimos commits**: `git log --oneline -5` debe mostrar
    (más recientes primero):
    ```
-   [hash]   docs: … Wave 10 …   ← el top debe ser un commit docs de Wave 10
+   [hash]   docs: HANDOFF Wave 11 …   ← el top debe ser docs Wave 11
+   3c3b926  B5: Confirmation Modal flow — modal táctil + doble confirmación + cancel audit
+   3ddf1e2  docs: hotfix Wave 10 — HANDOFF y CLAUDE.md sincronizados post-ADR-014
+   d3d8c0a  docs: ADR-014 pivote testing + HANDOFF + CLAUDE.md sincronizados (Wave 10)
    0e6bbfc  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
-   7299218  B4.5: tests E2E B4 voice→plan-intent
-   e01f293  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
-   ae1ce17  B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
    ```
-   El hash exacto del top puede variar si hubo hotfixes de docs en Wave 10;
-   lo que importa es que el mensaje mencione "Wave 10" y el working tree esté limpio.
-3. **LEER spec completa ANTES de codear**: `docs/04-specs/spec-confirmation-flow.md`.
-   Es el único documento autoritativo para B5. El HANDOFF resume los puntos
-   clave, pero la spec tiene los contratos exactos, los estados del modal,
-   el manejo de errores y las restricciones M1.
+   El hash exacto del top puede variar si hubo hotfixes; lo que importa es
+   que mencione "Wave 11" y el working tree esté limpio.
+3. **LEER specs antes de codear B6**: no hay spec dedicada para el cliente
+   `execute-plan`; leer:
+   - `docs/04-specs/spec-execute-plan-edge.md` — contratos de request/response
+     de la Edge Function (lo que el cliente debe enviar y recibir).
+   - `docs/04-specs/spec-error-handling.md` — códigos de error y mensajes en ES.
 4. Si el working tree NO está limpio, alguien dejó trabajo en curso.
    Pausar y reportar al director antes de tocar nada.
 
-### Estado B4 (✅ cerrado completamente)
+### Estado B5 (✅ cerrado completamente)
 
 | Sub-bloque | Commit | Qué entrega |
 |------------|--------|-------------|
-| B4.1 | `d1e8a94` | `plan-intent-client.ts` + 8 tests unit |
-| B4.2 | `b959081` | VoiceScreen integrado + 14 mensajes error ES + 9 tests |
-| B4.3 | `e5bb9ff` | `PlanPreview.svelte` render legible + 10 tests unit |
-| B4.4 | `ae1ce17` | Clarification flow TTS + auto-restart + buildClarifiedPrompt + 10 tests unit |
-| B4.5 | `7299218` | 5 tests E2E flow completo voice→plan-intent→PlanPreview |
+| B5 | `3c3b926` | ConfirmationModal.svelte + confirmation-utils.ts + execute-plan-client.ts stub + VoiceScreen integrado + 2 tests E2E (b53) |
 
-**Gotchas de B4 que persisten en B5 (no perder de vista)**:
+**Gotchas de B5 que persisten en B6 (no perder de vista)**:
 
-1. **`toBeDisabled()` / `toBeEnabled()` NO disponibles**: usar
+1. **`toBeDisabled()` / `toBeEnabled()` NO disponibles** (sin jest-dom): usar
    `expect((btn as HTMLButtonElement).disabled).toBe(true/false)`.
 2. **Mock TTS patrón B4.4**: `_handlers` map público + helper `emit(inst, event, value?)`.
    El mock de B3 (`on = vi.fn()`) no sirve para tests que necesiten disparar eventos TTS.
@@ -124,116 +121,78 @@ Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
    manualmente si el test necesita que `voiceState` vuelva a idle.
 4. **`tts.cancel()` emite `'error'` con `code:'interrupted'`**, NO `'end'`. En tests
    que simulen cancel de TTS: `emit(tts, 'error', { code: 'interrupted' })`.
+5. **IDB deadlock en tests**: no usar `fake-indexeddb/auto` + `localStore.wipeAll()` en el
+   mismo test file si hay `$effect` que dispara `getSetting`. Mockear `localStore`
+   completamente en tests que no necesiten IDB real (patrón establecido en b53).
+6. **`waitFor` con botones ambiguos**: "Cancelar" aparece tanto en el spinner de
+   procesamiento como en el modal. Esperar siempre el **header del modal** + el botón
+   para evitar falso positivo que se resuelve antes de que el DOM flush Svelte.
 
 ---
 
-### B5 — Confirmation Modal flow (🔲 pendiente, PRÓXIMO BLOQUE)
+### B6 — Execute & Audit cliente (🔲 pendiente, PRÓXIMO BLOQUE)
 
-**Spec autoritativa**: `docs/04-specs/spec-confirmation-flow.md` (leer completa).
+**Specs autoritativas**: leer AMBAS antes de codear:
+- `docs/04-specs/spec-execute-plan-edge.md` — contrato request/response de la Edge.
+- `docs/04-specs/spec-error-handling.md` — códigos y mensajes de error.
 
-**Qué construye B5** (5 tareas de `openspec/changes/m1-mvp/tasks.md` §Bloque 5):
+**Qué construye B6** (tareas de `openspec/changes/m1-mvp/tasks.md` §Bloque 6):
 
 | Tarea | Descripción |
 |-------|-------------|
-| T5.1 | `ConfirmationModal.svelte` — modal táctil full-screen para writes |
-| T5.2 | Preview SQL legible (operación, tabla, filtros, valores, SQL preview colapsable) |
-| T5.3 | Doble confirmación para `delete` sin filtros / estimación > 100 filas |
-| T5.4 | Cancel auditado — fire-and-forget POST a `execute-plan` con `rejected_by_user: true` |
-| T5.5 | Toggle `dry_run` global en `Settings.svelte` (verificar si ya existe en B2) |
+| T6.1 | `executePlan()` en `execute-plan-client.ts` (ya existe el stub de B5 — extender con el path real de confirmación, manejo de errores 401/403/422/500, TTS feedback) |
+| T6.2 | Vista de auditoría espejo en IndexedDB — últimas N ejecuciones cacheadas con detalle expandible |
+| T6.3 | Redacción client-side defensiva — si el server devuelve campos sensibles, aplicar doble defensa de `ORION_REDACTED_COLUMNS` |
 
 **Archivos a crear / modificar**:
 
 ```
-src/
-├── components/
-│   └── ConfirmationModal.svelte    ← NUEVO (T5.1 + T5.2 + T5.3)
-└── lib/
-    └── api/
-        └── execute-plan-client.ts  ← NUEVO mínimo (T5.4 cancel audit)
-                                       B6 lo extiende con el path confirmar
-
-src/components/VoiceScreen.svelte   ← MODIFICAR: trigger modal cuando
-                                      planResponse.kind === 'plan' &&
-                                      shouldConfirm(plan)
-src/components/Settings.svelte      ← VERIFICAR si dry_run toggle existe;
-                                      si no, AGREGAR (T5.5)
-
-tests/unit/b51-confirmation-modal.test.ts   ← NUEVO (modal unit)
-tests/unit/b52-double-confirm.test.ts       ← NUEVO (doble confirmación)
-tests/e2e/b53-confirmation-flow.test.ts     ← NUEVO (E2E: show modal → confirm/cancel)
+src/lib/api/execute-plan-client.ts  ← EXTENDER stub B5 con executePlan() real
+src/components/VoiceScreen.svelte   ← MODIFICAR handleConfirmed(): llamar executePlan()
+                                       + TTS resultado + limpiar estado
+src/lib/storage/local-store.ts      ← EXTENDER con appendAuditMirror / listAuditMirror
+                                       (verificar si ya existen — pueden estar en stub B2)
+src/components/AuditView.svelte     ← NUEVO (opcional según spec §T6.2 — verificar)
 ```
 
-**Interfaz del modal** (de spec §3.2):
+**Signature de `executePlan`** (derivada de spec-execute-plan-edge.md):
 
 ```ts
-// src/components/ConfirmationModal.svelte — props
-interface ConfirmationModalProps {
-  plan: Plan;
-  sqlPreview: string;          // generado client-side (aproximación)
-  warnings: string[];          // ej: 'Sin filtros: afecta toda la tabla.'
-  requiresDouble: boolean;     // true para delete sin filtros / estimación > 100
-  onConfirm(): void;
-  onCancel(): void;
+// src/lib/api/execute-plan-client.ts — función principal B6
+export interface ExecutePlanResult {
+  ok: boolean;
+  rows_affected?: number;
+  result_summary?: string;   // redactado server-side
+  audit_id?: string;
 }
+export async function executePlan(
+  plan: Plan,
+  accessToken: string,
+  opts?: { userPrompt?: string; schemaHash?: string; dryRun?: boolean }
+): Promise<ExecutePlanResult> { ... }
 ```
 
-**Funciones helper** (definir en el mismo componente o en `src/lib/confirmation-utils.ts`):
+**Flujo en VoiceScreen tras confirmar** (B6):
+1. `handleConfirmed()` llama `executePlan(plan, token, { userPrompt, schemaHash })`
+2. Si ok → TTS "Listo" + `result_summary` + limpiar planResponse
+3. Si error → TTS mensaje error + mostrar card de error + planResponse = null
+4. Auditoría espejo IndexedDB: `localStore.appendAuditMirror({ plan, result, ts })`
 
-```ts
-function shouldConfirm(plan: Plan): boolean {
-  return plan.operation !== 'select';
-}
+**⚡ Testing ADR-014 — B6 es excepción obligatoria**:
+- B6 toca Postgres real → **2 tests mínimos obligatorios** (integración real,
+  no solo mocks). Pueden ser smoke tests contra Supabase staging si el director
+  tiene el proyecto configurado, o integration tests con un Supabase local.
+- Si el proyecto Supabase real no está disponible aún: crear los 2 tests
+  con `skip` explícito y nota `[BLOQUEADA: proyecto Supabase no configurado]`.
+  El director desbloquea cuando provea credenciales.
 
-function requiresDoubleConfirm(plan: Plan): boolean {
-  if (plan.operation === 'delete') {
-    if (!plan.filters || plan.filters.length === 0) return true;
-  }
-  return false;
-  // M1: sin estimación de filas — esa lógica es M2 (dry_run automático)
-}
-```
-
-**UX innegociable** (spec §3.3 + §7):
-- Modal **full-screen** en mobile. No popup pequeño.
-- Botón **Cancelar default focused**. `Enter` **NO confirma**.
-- Header: azul `insert`, naranja `update`, rojo `delete`.
-- **Sin filas estimadas** en M1 (el `dry_run` automático pre-modal es M2).
-- Countdown visible a 50s; auto-cancel a 60s (audita como `rejected_by_user`).
-- Botón Confirmar se deshabilita tras primer tap (evita doble request).
-- Tap fuera del modal NO cierra (full-screen no tiene "fuera").
-
-**Cancel audit — fire-and-forget** (spec §3.6):
-
-```ts
-// execute-plan-client.ts mínimo para B5
-async function auditCancel(plan: Plan, accessToken: string): Promise<void> {
-  fetch(EXECUTE_PLAN_URL, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ plan, rejected_by_user: true }),
-  }).catch((err) => console.warn('audit cancel failed', err));
-  // Fire-and-forget: si falla, el cancel local procede igual. No bloquea UX.
-}
-```
-
-**Integración en VoiceScreen.svelte** — cambio principal:
-
-Cuando `planResponse?.kind === 'plan'` y `shouldConfirm(planResponse.plan) === true`:
-- En lugar de solo mostrar `PlanPreview`, mostrar `ConfirmationModal` encima.
-- `onConfirm` → de momento emitir event / llamar callback (B6 conecta la ejecución real).
-- `onCancel` → llamar `auditCancel(plan, token)` (fire-and-forget) + limpiar estado.
-
-**Reglas duras para B5**:
-- B5 NO ejecuta el plan contra Postgres — la ejecución es B6 (T6.1).
-- B5 solo hace la UI del modal + el fire-and-forget del cancel audit.
-- `ConfirmationModal` es un componente puro: no llama directamente a la Edge
-  desde adentro; la lógica de llamada vive en VoiceScreen / callbacks.
+**Reglas duras para B6**:
+- `executePlan()` NUNCA envía `service_role` — solo Bearer JWT del usuario.
+- La Edge `execute-plan` valida allowlist server-side (innegociable M1).
+- `dryRun` global desde `localStore.getSetting('dryRun')` antes de llamar.
 - Gates antes de commit: `npm run check` + `npm run lint` + `npx vitest run`.
-- Sub-bloques sugeridos:
-  - **B5.1** — `ConfirmationModal.svelte` completo + tests unit (T5.1+T5.2+T5.3).
-  - **B5.2** — Integración en VoiceScreen + `execute-plan-client.ts` minimal + T5.5 + tests E2E (T5.4).
-- Al cerrar B5: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6, §19)
-  y commitear docs Wave 11 ANTES del siguiente bloque.
+- Al cerrar B6: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6, §19)
+  y commitear docs Wave 12 ANTES del siguiente bloque.
 
 ---
 
@@ -255,7 +214,7 @@ Resumen:
 
 ## 5. Working tree LIMPIO (verificación obligatoria al abrir sesión)
 
-Estado al cierre de ADR-014 + Wave 10: **working tree limpio, todo commiteado**.
+Estado al cierre de B5 + Wave 11: **working tree limpio, todo commiteado**.
 
 Verificar siempre al abrir sesión:
 
@@ -263,11 +222,11 @@ Verificar siempre al abrir sesión:
 git status         # debe decir: nothing to commit, working tree clean
 git log --oneline -5
 # debe mostrar (más recientes primero):
-#   [hash]   docs: … Wave 10 …  ← top = docs Wave 10 (hash puede variar por hotfixes)
+#   [hash]   docs: HANDOFF Wave 11 …    ← top = docs Wave 11
+#   3c3b926  B5: Confirmation Modal flow — modal táctil + doble confirmación + cancel audit
+#   3ddf1e2  docs: hotfix Wave 10 — HANDOFF y CLAUDE.md sincronizados post-ADR-014
+#   d3d8c0a  docs: ADR-014 pivote testing + HANDOFF + CLAUDE.md sincronizados (Wave 10)
 #   0e6bbfc  docs: HANDOFF sincronizado post-B4.5 (Wave 9)
-#   7299218  B4.5: tests E2E B4 voice→plan-intent
-#   e01f293  docs: HANDOFF sincronizado post-B4.4 (Wave 8)
-#   ae1ce17  B4.4: clarification flow con TTS + re-listen + buildClarifiedPrompt
 ```
 
 Si el working tree NO está limpio, alguien dejó trabajo en curso.
@@ -285,7 +244,8 @@ Wave 5). Debe NUNCA aparecer en `git status` como untracked.
 src/
 ├── App.svelte                       — shell principal, routing por router.mode
 ├── components/
-│   ├── VoiceScreen.svelte           — pantalla voz + integración plan-intent (B3+B4.2+B4.3+B4.4) ✅
+│   ├── VoiceScreen.svelte           — pantalla voz + plan-intent + modal (B3+B4.2+B4.3+B4.4+B5) ✅ 3c3b926
+│   ├── ConfirmationModal.svelte     — modal full-screen writes (B5) ✅ 3c3b926
 │   ├── PlanPreview.svelte           — render legible del Plan JSON (B4.3) ✅ e5bb9ff
 │   ├── LoginWizard.svelte           — login magic link (B2) ✅
 │   ├── Settings.svelte              — pantalla config (B2) ✅
@@ -303,9 +263,11 @@ src/
     │   └── types.ts                 — tipos storage/settings (B2) ✅
     ├── contracts/
     │   └── plan-schema.ts           — barrel re-export desde $shared (B1, ADR-013)
+    ├── confirmation-utils.ts        — shouldConfirm, requiresDoubleConfirm, buildSqlPreview, buildWarnings (B5) ✅ 3c3b926
     └── api/
         ├── plan-intent-client.ts    — HTTP client plan-intent (B4.1) ✅ d1e8a94
-        └── plan-intent-messages.ts  — 14 mensajes error español (B4.2) ✅ b959081
+        ├── plan-intent-messages.ts  — 14 mensajes error español (B4.2) ✅ b959081
+        └── execute-plan-client.ts   — auditCancel fire-and-forget stub (B5) ✅ 3c3b926; B6 agrega executePlan()
 
 supabase/
 ├── functions/
@@ -335,7 +297,8 @@ tests/
 ├── e2e/
 │   ├── b2-auth-config.test.ts       — flows auth, config, logout (B2) ✅
 │   ├── b3-voice-screen.test.ts      — 8 tests VoiceScreen UI (B3) ✅
-│   └── b45-voice-plan-flow.test.ts  — 5 tests E2E voice→plan-intent→PlanPreview (B4.5) ✅ 7299218
+│   ├── b45-voice-plan-flow.test.ts  — 5 tests E2E voice→plan-intent→PlanPreview (B4.5) ✅ 7299218
+│   └── b53-confirmation-flow.test.ts — 2 tests E2E confirm+cancel (B5) ✅ 3c3b926
 ├── contracts/
 │   ├── plan-schema.test.ts          — Vitest schema Zod (B1) ✅
 │   ├── import-guard.test.ts         — guard no-imports cross-layer (B1) ✅
@@ -641,3 +604,4 @@ confiable entre sesiones.**
 | Wave 8 | B4.4: clarification flow completo (TTS speaks question + auto-restart recognition + buildClarifiedPrompt + re-submit) + 10 tests unit. HANDOFF sincronizado para B4.5. Gates: 208/208 verde. | 2026-05-03 | `ae1ce17` |
 | Wave 9 | B4.5: 5 tests E2E flow completo voice→plan-intent→PlanPreview/clarification. Bloque B4 cerrado. HANDOFF sincronizado para B5 (Confirmation Modal). Corrección: `npm run test` no existe → `npx vitest run`. Gates: 213/213 verde. | 2026-05-03 | `0e6bbfc` |
 | Wave 10 | ADR-014 formalizado (pivote de testing B5-B8 — cobertura mínima intencional, excepción B6). HANDOFF + CLAUDE.md + ADR-INDEX.md sincronizados. Baseline: 213 tests, commit `0e6bbfc`. Hotfix Wave 10: referencias de Wave y git log corregidas en HANDOFF §1, §3, §5, §15, §19. | 2026-05-03 | `d3d8c0a` |
+| Wave 11 | B5 cerrado: ConfirmationModal.svelte (step machine, timer 60s, doble confirmación), confirmation-utils.ts, execute-plan-client.ts (stub auditCancel), VoiceScreen integrado, 2 tests E2E (b53). Decisiones: confirmSettings lazy-load en callPlanIntent (evita deadlock IDB), localStore mockeado en b53, waitFor espera header+botón para evitar Cancelar ambiguo. Gates: 218/218 verde. | 2026-05-03 | `3c3b926` |

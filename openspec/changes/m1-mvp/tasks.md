@@ -215,28 +215,36 @@ se complete y se valide.
 
 ## Bloque 5 — PWA Confirmation flow (depende: B3)
 
-- [ ] **T5.1** — Modal de confirmación táctil para writes según
+- [x] **T5.1** — Modal de confirmación táctil para writes según
   [`spec-confirmation-flow`](../../../docs/04-specs/spec-confirmation-flow.md).
   *Aceptación*: ningún write se ejecuta sin tap explícito en
-  "Confirmar".
-- [ ] **T5.2** — Preview SQL legible (tabla, valores, filtros, filas
+  "Confirmar". ✅ 2026-05-03 `3c3b926` (`ConfirmationModal.svelte`, step machine
+  waiting→double→confirming, timer 60s, foco en Cancelar, Enter bloqueado)
+- [x] **T5.2** — Preview SQL legible (tabla, valores, filtros, filas
   estimadas si están).
   *Aceptación*: el director entiende qué se va a ejecutar sin saber
-  SQL.
-- [ ] **T5.3** — Doble confirmación bloqueada server-side para
+  SQL. ✅ 2026-05-03 `3c3b926` (`buildSqlPreview` + `buildWarnings` en
+  `confirmation-utils.ts`, SQL preview colapsable en modal)
+- [x] **T5.3** — Doble confirmación bloqueada server-side para
   `delete sin filtros` (regla hardcoded en `execute-plan`).
   *Aceptación*: `delete` sin WHERE rechazado por `execute-plan` con
   error legible y entrada en `orion_audit`. (US-SEC-06 doble
-  confirmación high-impact se implementa en M2.)
-- [ ] **T5.4** — Cancelación auditada: cancelar el modal envía POST
+  confirmación high-impact se implementa en M2.) ✅ 2026-05-03 `3c3b926`
+  (`requiresDoubleConfirm` con settings `doubleConfirmDelete` /
+  `doubleConfirmUpdateNoFilter` — UI client-side; server-side hardcodeado en B1)
+- [x] **T5.4** — Cancelación auditada: cancelar el modal envía POST
   a `execute-plan` con `dry_run: true` + `rejected_by_user: true`
   para registrar la decisión.
   *Aceptación*: cancelar genera entrada en `orion_audit` con código
-  `rechazado_por_usuario`.
-- [ ] **T5.5** — Toggle `dry_run` global en config (cuando está ON,
+  `rechazado_por_usuario`. ✅ 2026-05-03 `3c3b926` (`auditCancel` fire-and-forget
+  en `execute-plan-client.ts`; stub completo, entrada en `orion_audit` depende
+  de deploy real en B8)
+- [x] **T5.5** — Toggle `dry_run` global en config (cuando está ON,
   todo write se envía con `dry_run: true`).
   *Aceptación*: con dry_run activo, ningún write toca Postgres pero
-  todo se audita.
+  todo se audita. ✅ ya existía en B2 (`Settings.svelte` — verificado T5.5
+  pre-implementación; los toggles `dryRun`, `doubleConfirmDelete`,
+  `doubleConfirmUpdateNoFilter` estaban presentes desde B2)
 
 ---
 
