@@ -123,7 +123,11 @@ Mapas C4 ASCII y DDL canónico en `docs/02-architecture/OVERVIEW.md` y
 Lista completa en `docs/00-constitution/CONSTITUTION.md` y checklist
 ejecutable en `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 
-## Estado Actual (Wave 4 — 2026-05-02)
+## Estado Actual (Wave 5 — 2026-05-03)
+
+> **Fuente de verdad operativa**: `docs/HANDOFF.md`. Este resumen es
+> referencia rápida; el HANDOFF tiene el estado exacto, working tree
+> y próximo paso.
 
 ### Implementación
 
@@ -133,13 +137,20 @@ ejecutable en `docs/00-constitution/PRINCIPLES-CHECKLIST.md`.
 | B1 | Supabase backend: plan-intent, execute-plan, schema-summary edges + orion_audit DDL + plan-schema Zod + query-builder + redact | ✅ código (⚠️ sin deploy real) | `c07b235` |
 | B2 | PWA Auth & Config: auth store, routing, LoginWizard, Settings.svelte, IndexedDB, logout | ✅ | `138f4e3` |
 | B3 | Voice screen: VoiceInputController, TtsOutputController, VoiceScreen, unit tests (30), E2E tests (8) | ✅ | `5ebb458` |
-| B4 | Plan-Intent client integration | 🔄 PAUSADO — decisiones pendientes | — |
+| Wave 4 | Sync de docs post B0-B3 + B4 decisiones formalizadas | ✅ | `91b3bb1` |
+| B4.1 / T3.1 | Plan-Intent client (`src/lib/api/plan-intent-client.ts`) + tests + audit fixes (acentos ES + Biome format) | ✅ | `d1e8a94` |
+| B4.2-B4.5 | VoiceScreen integration + PlanPreview + Clarification flow + E2E | ⏳ pendiente | — |
 | B5–B8 | Confirmation, Execute, Atajos, Deploy | ⏳ pendiente | — |
 
-**Tests**: 168/168 Vitest verde (unit + E2E + contracts).
+**Tests al cierre B4.1**: 176/176 Vitest verde (168 previos + 8 nuevos
+del cliente plan-intent). Deno tests no re-verificados desde `c07b235`
+(re-verificación obligatoria pre-deploy en B8).
 
-**Próximo paso**: resolver 4 decisiones en
-`docs/05-implementation/B4-PENDING-DECISIONS.md` y arrancar B4.
+**Próximo paso**: arrancar B4.2 (integración VoiceScreen → plan-intent
+con loading state). Ver `docs/HANDOFF.md` para detalle del estado.
+
+**Decisiones B4 ya resueltas** (cerradas el 2026-05-03): ver
+`docs/05-implementation/B4-PENDING-DECISIONS.md`.
 
 ### Estructura del código fuente (post B0-B3)
 
@@ -161,15 +172,20 @@ src/
     ├── storage/
     │   ├── local-store.ts        ← B2
     │   └── types.ts              ← B2
-    └── api/                      ← vacío, a crear en B4
+    ├── contracts/
+    │   └── plan-schema.ts        ← B1 (barrel desde $shared)
+    └── api/
+        └── plan-intent-client.ts ← B4.1 🔄 sin commit
 
 supabase/functions/
-├── _shared/{plan-schema,query-builder,redact}.ts  ← B1
+├── _shared/{plan-schema,query-builder,redact,schema-summary-core,audit,retries}.ts  ← B1
 ├── plan-intent/index.ts          ← B1
 ├── execute-plan/index.ts         ← B1
-└── schema-summary/index.ts       ← B1
+├── schema-summary/index.ts       ← B1
+├── tests/                        ← B1
+└── deno.json                     ← B1
 
-tests/{unit,e2e,contracts}/       ← B1, B2, B3
+tests/{unit,e2e,contracts,smoke,fixtures}/  ← B1, B2, B3, B4.1
 supabase/migrations/001,002.sql   ← B1
 ```
 
@@ -187,8 +203,11 @@ Detalle: `docs/05-implementation/TECHNICAL-DEBT.md`.
 
 ### Handoff
 
-Documento de traspaso completo: `docs/HANDOFF.md`.
-Decisiones bloqueantes para B4: `docs/05-implementation/B4-PENDING-DECISIONS.md`.
+**Documento maestro único** de orquestación entre sesiones:
+`docs/HANDOFF.md`. Cualquier sesión nueva debe leerlo PRIMERO.
+
+Decisiones B4 (resueltas 2026-05-03):
+`docs/05-implementation/B4-PENDING-DECISIONS.md`.
 
 ## Tribunal de IAs
 
