@@ -11,6 +11,6 @@ export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: 'implicit',
   },
 });
