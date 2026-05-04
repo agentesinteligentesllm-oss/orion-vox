@@ -8,9 +8,11 @@ import { validateEmail } from '../lib/utils.ts';
 type UiState = 'idle' | 'sending' | 'sent' | 'error';
 
 let email = $state('');
+let password = $state('');
 let selectedIdioma = $state<Idioma>('es-MX');
 let uiState = $state<UiState>('idle');
 let errorMsg = $state('');
+let usePassword = $state(false);
 
 function friendlyError(err: AuthError): string {
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -19,7 +21,10 @@ function friendlyError(err: AuthError): string {
   if (err.message.toLowerCase().includes('rate') || err.status === 429) {
     return 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.';
   }
-  return 'No se pudo enviar el enlace. Verificá tu email e intentá de nuevo.';
+  if (err.message.toLowerCase().includes('invalid login') || err.status === 400) {
+    return 'Email o contraseña incorrectos.';
+  }
+  return 'No se pudo iniciar sesión. Verificá tu email e intentá de nuevo.';
 }
 
 async function sendLink() {
@@ -31,6 +36,17 @@ async function sendLink() {
   }
   uiState = 'sending';
   await localStore.putSetting('idioma', selectedIdioma);
+
+  if (usePassword) {
+    const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
+    if (error) {
+      errorMsg = friendlyError(error);
+      uiState = 'error';
+    }
+    // on success onAuthStateChange fires and App.svelte redirects to voice
+    return;
+  }
+
   const { error } = await supabase.auth.signInWithOtp({
     email: trimmed,
     options: { emailRedirectTo: window.location.origin },
@@ -84,6 +100,19 @@ async function sendLink() {
           class="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 placeholder-gray-600 focus:border-gray-500 focus:outline-none disabled:opacity-50"
         />
 
+        {#if usePassword}
+          <label class="mb-1 block text-sm text-gray-400" for="password">Contraseña</label>
+          <input
+            id="password"
+            type="password"
+            bind:value={password}
+            disabled={uiState === 'sending'}
+            placeholder="••••••••"
+            autocomplete="current-password"
+            class="mb-3 w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 placeholder-gray-600 focus:border-gray-500 focus:outline-none disabled:opacity-50"
+          />
+        {/if}
+
         <label class="mb-1 block text-sm text-gray-400" for="idioma">Idioma de voz</label>
         <select
           id="idioma"
@@ -96,6 +125,14 @@ async function sendLink() {
           <option value="es-ES">Español · España</option>
         </select>
 
+        <button
+          type="button"
+          class="mb-3 text-sm text-gray-500 underline hover:text-gray-300"
+          onclick={() => { usePassword = !usePassword; errorMsg = ''; uiState = 'idle'; }}
+        >
+          {usePassword ? 'Usar enlace de acceso' : 'Usar contraseña'}
+        </button>
+
         {#if uiState === 'error'}
           <p class="mb-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-300">
             {errorMsg}
@@ -104,10 +141,10 @@ async function sendLink() {
 
         <button
           type="submit"
-          disabled={uiState === 'sending' || !email.trim()}
+          disabled={uiState === 'sending' || !email.trim() || (usePassword && !password)}
           class="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {uiState === 'sending' ? 'Enviando…' : 'Enviar enlace de acceso'}
+          {uiState === 'sending' ? 'Entrando…' : usePassword ? 'Entrar' : 'Enviar enlace de acceso'}
         </button>
       </form>
     {/if}
