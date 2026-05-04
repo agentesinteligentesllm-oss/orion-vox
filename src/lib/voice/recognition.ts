@@ -113,7 +113,15 @@ export class VoiceInputController {
       return;
     }
     if (this._state !== 'idle') return;
-    this.recognition.start();
+    try {
+      this.recognition.start();
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'InvalidStateError') {
+        // Browser already started — abort and re-start cleanly
+        this.recognition.abort();
+        setTimeout(() => { this.recognition?.start(); }, 100);
+      }
+    }
   }
 
   stop(): void {
