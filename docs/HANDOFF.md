@@ -3,7 +3,7 @@ title: HANDOFF — Documento maestro de orquestación
 status: stable
 milestone: M1
 owner: orion-vox
-last-reviewed: 2026-05-03 (B6 Wave 12)
+last-reviewed: 2026-05-03 (B7 Wave 13)
 purpose: |
   Único documento de entrada para cualquier sesión nueva (Claude o
   Codex) que retome el proyecto. Se actualiza al cierre de cada bloque
@@ -34,18 +34,16 @@ related:
   sirve de puente entre Gemini (Android) y un proyecto Supabase del
   director, usando voz natural en español. Cubot KingKong 9 es el
   dispositivo target.
-- **Avance M1**: ~95% (B0-B6 completos, B7-B8 pendientes).
-- **Próxima acción concreta**: arrancar B7 (Atajos Android + Instalación
-  PWA — manifest shortcuts, service worker, Add to Home Screen). Ver §3.
-- **Bloque B6 cerrado**: executePlan() real + AuditView + redact-client +
-  VoiceScreen wired + 2 tests skip (bloqueados sin Supabase). Commit
-  `496e848`. Spec autoritativa: [`04-specs/spec-pwa-shell.md`](./04-specs/spec-pwa-shell.md)
-  para B7.
+- **Avance M1**: ~98% (B0-B7 completos, B8 pendiente).
+- **Próxima acción concreta**: arrancar B8 (Deploy Vercel + Smoke E2E Cubot
+  KK9). **Prerequisito bloqueante**: setup Supabase real (§9). Ver §3.
+- **Bloque B7 cerrado**: manifest canónico + Workbox (registerType:prompt) +
+  NetworkOnly Gemini/Supabase + pwa.svelte.ts (install + update banners) +
+  iconos PNG + 2 tests E2E. Commit `d46a9c9`.
 - **⚡ Pivote de testing (ADR-014)**: a partir de B5 la cobertura es mínima
-  intencional. B6 fue la excepción obligatoria (2 tests, ya implementados
-  con skip hasta configurar Supabase). B7 y B8: mínima o ninguna cobertura.
+  intencional. B7: 2 tests E2E (golden paths). B8: mínima o ninguna.
   Ver [`03-adr/ADR-014-testing-strategy-pivot.md`](./03-adr/ADR-014-testing-strategy-pivot.md).
-- **Working tree LIMPIO** al cierre de B6 + Wave 12 (commit docs Wave 12).
+- **Working tree LIMPIO** al cierre de B7 + Wave 13.
   Verificar con `git status` antes de tocar nada.
 - **Riesgo activo**: `deno test` no re-verificado desde commit `c07b235`
   (ver §8). Gate `check` 0 errores mantenido en todos los bloques.
@@ -70,10 +68,10 @@ related:
 | **B4.5** | Tests E2E del flow completo voice → plan-intent → PlanPreview / clarification | ✅ done | `7299218` |
 | **B5** | Confirmation Modal flow (ConfirmationModal + confirmation-utils + execute-plan-client stub + VoiceScreen integrado) | ✅ done | `3c3b926` |
 | **B6** | Execute & Audit cliente (executePlan real + AuditView + redact-client + VoiceScreen wired) | ✅ done | `496e848` |
-| **B7** | Atajos Android + Instalación PWA | 🔲 pendiente | — |
+| **B7** | Atajos Android + Instalación PWA | ✅ done | `d46a9c9` |
 | **B8** | Deploy + Smoke E2E Cubot KK9 | 🔲 pendiente | — |
 
-**Tests al cierre B6**: 220/220 Vitest verde + 2 skipped (integración B6,
+**Tests al cierre B7**: 224/224 Vitest verde + 2 skipped (integración B6,
 bloqueados hasta configurar Supabase). Gate `check` verde (0 errores).
 Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 (re-verificación obligatoria pre-deploy en B8).
@@ -90,26 +88,29 @@ Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
 2. **Verificar últimos commits**: `git log --oneline -5` debe mostrar
    (más recientes primero):
    ```
-   [hash]   docs: HANDOFF Wave 12 …   ← el top debe ser docs Wave 12
+   [hash]   docs: HANDOFF + openspec sincronizados post-B7 (Wave 13)  ← top = Wave 13
+   d46a9c9  B7: Manifest canónico + Workbox PWA + install/update banners + iconos + 2 tests E2E
+   bc80478  docs: HANDOFF + openspec sincronizados post-B6 (Wave 12)
    496e848  B6: Execute & Audit cliente — executePlan real + AuditView + redact-client
    3e3e66d  docs: HANDOFF + openspec sincronizados post-B5 (Wave 11)
-   3c3b926  B5: Confirmation Modal flow — modal táctil + doble confirmación + cancel audit
-   3ddf1e2  docs: hotfix Wave 10 — HANDOFF y CLAUDE.md sincronizados post-ADR-014
    ```
-   El hash exacto del top puede variar si hubo hotfixes; lo que importa es
-   que mencione "Wave 12" y el working tree esté limpio.
-3. **LEER spec antes de codear B7**: spec autoritativa única:
-   - `docs/04-specs/spec-pwa-shell.md` — manifest, service worker, atajos.
-4. Si el working tree NO está limpio, alguien dejó trabajo en curso.
+   El hash exacto del top puede variar; lo que importa es que mencione "Wave 13"
+   y el working tree esté limpio.
+3. **LEER spec antes de codear B8**: spec autoritativa para B8:
+   - `docs/05-implementation/M1-MVP.md` — criterios de Done M1.
+   - `docs/06-deploy/` — instrucciones de deploy (si existen).
+4. **Prerequisito bloqueante para B8**: setup Supabase real (§9).
+   Sin proyecto Supabase + env vars configuradas, B8 no puede empezar.
+5. Si el working tree NO está limpio, alguien dejó trabajo en curso.
    Pausar y reportar al director antes de tocar nada.
 
-### Estado B6 (✅ cerrado completamente)
+### Estado B7 (✅ cerrado completamente)
 
 | Sub-bloque | Commit | Qué entrega |
 |------------|--------|-------------|
-| B6 | `496e848` | executePlan() + ExecutePlanClientError + 17 msgs ES. AuditView.svelte. redact-client.ts. VoiceScreen handleConfirmed() async. Ruta `audit`. 2 tests skip (ADR-014) |
+| B7 | `d46a9c9` | Manifest canónico (start_url, shortcuts, tema). Workbox registerType:prompt. NetworkOnly Gemini+Supabase. pwa.svelte.ts (PwaStore: install + update). App.svelte banners. Iconos PNG. 2 tests E2E. |
 
-**Gotchas de B6 que persisten en B7/B8 (no perder de vista)**:
+**Gotchas de B7 que persisten en B8 (no perder de vista)**:
 
 1. **`toBeDisabled()` / `toBeEnabled()` NO disponibles** (sin jest-dom): usar
    `expect((btn as HTMLButtonElement).disabled).toBe(true/false)`.
@@ -118,52 +119,45 @@ Gate `lint` verde (0 errores). Deno tests no re-verificados desde `c07b235`
    manualmente si el test necesita que `voiceState` vuelva a idle.
 4. **`tts.cancel()` emite `'error'` con `code:'interrupted'`**, NO `'end'`.
 5. **`handleConfirmed()` es async**: setea `planResponse = null` ANTES de `executePlan()`
-   para cerrar el modal inmediatamente. `voiceState` se resetea manualmente a `'idle'`
-   en el finally — NO depender de `recognition.resetToIdle()`.
+   para cerrar el modal inmediatamente.
 6. **Mock `execute-plan-client` en b53**: incluye `ExecutePlanClientError` + `executePlan`
    — si se agrega algo al módulo real, actualizar también el mock del test.
 7. **2 tests B6 bloqueados con skip**: se activan automáticamente cuando
    `.env.local` tenga `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`.
+8. **`virtual:pwa-register` en tests**: cualquier test que monte `App.svelte` necesita
+   que `vitest.config.ts` tenga el alias → `src/__mocks__/pwa-register.ts` (ya configurado).
+   Si se agregan tests nuevos que monten App, no necesitan hacer nada extra.
 
 ---
 
-### B7 — Atajos Android + Instalación PWA (🔲 pendiente, PRÓXIMO BLOQUE)
+### B8 — Deploy & Validación (🔲 pendiente, PRÓXIMO BLOQUE)
 
-**Spec autoritativa**: leer COMPLETA antes de codear:
-- `docs/04-specs/spec-pwa-shell.md` — manifest canónico, SW estrategias, shortcuts.
+**⚠️ BLOQUEANTE**: B8 requiere que el director complete el setup de Supabase (§9).
+Sin eso, T8.1 y T8.4 no pueden ejecutarse.
 
-**⚠️ Divergencia detectada entre spec y tasks** (director decide al iniciar B7):
-- `spec-pwa-shell.md §7` dice: "Sin Workbox. SW vanilla ~150 líneas."
-- `openspec/tasks.md T7.2` dice: "Workbox vía `vite-plugin-pwa`."
-- `vite-plugin-pwa` ya está instalado desde B0. Resolución: confirmar con el
-  director al pre-flight de B7 antes de tocar código.
-
-**Qué construye B7** (tareas de `openspec/changes/m1-mvp/tasks.md` §Bloque 7):
+**Qué construye B8** (tareas de `openspec/changes/m1-mvp/tasks.md` §Bloque 8):
 
 | Tarea | Descripción |
 |-------|-------------|
-| T7.1 | Manifest con shortcuts (modo voz `?mode=voice`, config `?mode=config`, auditoría `?mode=audit`). Long-press en Android muestra los 3 shortcuts. |
-| T7.2 | Service worker con cache de assets estáticos. **Resolver divergencia spec vs tasks antes de implementar.** |
-| T7.3 | Add to Home Screen — prompt `beforeinstallprompt` + banner "Instalar". |
-| T7.4 | Lockscreen widget (best-effort — documentar si KK9 lo soporta). |
-| T7.5 | Quick Tile (best-effort — documentar feasibility en KK9). |
+| T8.1 | Deploy PWA a Vercel (preview + production con HTTPS). |
+| T8.2 | Verificar HTTPS + criterios PWA: Lighthouse PWA score ≥ 90. |
+| T8.3 | Instalar PWA en Cubot KK9 desde Chrome Android. |
+| T8.4 | Smoke E2E manual: "OK Google, abrí Orion Vox" → login → voz → resultado TTS. |
+| T8.5 | Verificar todas las US M1 contra criterios de aceptación. |
+| T8.6 | Verificar todos los criterios de Done de `M1-MVP.md`. |
+| T8.7 | Marcar change `m1-mvp` como `completed` en `state.yaml` + archivar. |
 
-**Archivos a crear / modificar**:
+**Tareas técnicas adicionales en B8**:
+- Re-verificar `deno test` (R-01: no verificado desde `c07b235`).
+- Confirmar que los 2 tests B6 skip pasan con Supabase real configurado.
+- Reemplazar iconos placeholder `public/icons/` con PNGs de diseño final (si aplica).
+- Configurar Vercel: proyecto, dominio, env vars (no se almacenan en repo).
 
-```
-public/manifest.webmanifest    ← REEMPLAZAR placeholder B0 con spec canónico
-public/icons/                  ← verificar si existen iconos 192/512 + shortcuts
-src/lib/pwa.ts                 ← NUEVO: captura beforeinstallprompt + lógica update SW
-vite.config.ts                 ← revisar config vite-plugin-pwa (workbox vs vanilla)
-```
-
-**Reglas duras para B7**:
-- `?mode=audit` ya funciona (router y App.svelte actualizados en B6).
-- La ruta `/?mode=voice` como `start_url` es innegociable (spec §3.1).
-- Calls a Gemini y Edge Functions NUNCA interceptadas por SW (spec §3.2).
+**Reglas duras para B8**:
+- Supabase URL, anon_key: en `.env.local` (protegido por .gitignore, NUNCA commitear).
+- Service role key: SOLO en env vars de Supabase Edge Functions, NUNCA en cliente.
 - Gates antes de commit: `npm run check` + `npm run lint` + `npx vitest run`.
-- Al cerrar B7: reportar al director, actualizar HANDOFF (§1, §2, §3, §5, §6, §19)
-  y commitear docs Wave 13 ANTES de B8.
+- Al cerrar B8: actualizar HANDOFF + tasks + state.yaml + CLAUDE.md. Commitear Wave 14.
 
 ---
 
@@ -185,7 +179,7 @@ Resumen:
 
 ## 5. Working tree LIMPIO (verificación obligatoria al abrir sesión)
 
-Estado al cierre de B6 + Wave 12: **working tree limpio, todo commiteado**.
+Estado al cierre de B7 + Wave 13: **working tree limpio, todo commiteado**.
 
 Verificar siempre al abrir sesión:
 
@@ -193,11 +187,11 @@ Verificar siempre al abrir sesión:
 git status         # debe decir: nothing to commit, working tree clean
 git log --oneline -5
 # debe mostrar (más recientes primero):
-#   [hash]   docs: HANDOFF Wave 12 …    ← top = docs Wave 12
+#   [hash]   docs: HANDOFF + openspec sincronizados post-B7 (Wave 13)  ← top
+#   d46a9c9  B7: Manifest canónico + Workbox PWA + install/update banners…
+#   bc80478  docs: HANDOFF + openspec sincronizados post-B6 (Wave 12)
 #   496e848  B6: Execute & Audit cliente — executePlan real + AuditView + redact-client
 #   3e3e66d  docs: HANDOFF + openspec sincronizados post-B5 (Wave 11)
-#   3c3b926  B5: Confirmation Modal flow — modal táctil + doble confirmación + cancel audit
-#   3ddf1e2  docs: hotfix Wave 10 — HANDOFF y CLAUDE.md sincronizados post-ADR-014
 ```
 
 Si el working tree NO está limpio, alguien dejó trabajo en curso.
@@ -236,12 +230,28 @@ src/
     ├── contracts/
     │   └── plan-schema.ts           — barrel re-export desde $shared (B1, ADR-013)
     ├── confirmation-utils.ts        — shouldConfirm, requiresDoubleConfirm, buildSqlPreview, buildWarnings (B5) ✅ 3c3b926
+    ├── pwa.svelte.ts                — PwaStore: canInstall + needsUpdate + init/install/applyUpdate (B7) ✅ d46a9c9
     ├── utils/
     │   └── redact-client.ts         — redactResult() defensa client-side columnas sensibles (B6) ✅ 496e848
     └── api/
         ├── plan-intent-client.ts    — HTTP client plan-intent (B4.1) ✅ d1e8a94
         ├── plan-intent-messages.ts  — 14 mensajes error español (B4.2) ✅ b959081
         └── execute-plan-client.ts   — executePlan() + ExecutePlanClientError + auditCancel (B5+B6) ✅ 496e848
+
+src/__mocks__/
+└── pwa-register.ts                  — stub registerSW no-op para Vitest (B7) ✅ d46a9c9
+
+scripts/
+└── gen-icons.mjs                    — generador PNG sin deps externas (node:zlib) (B7) ✅ d46a9c9
+
+public/
+├── favicon.svg                      — logo Orion (B0) ✅
+└── icons/                           — PNG para manifest PWA (B7) ✅ d46a9c9
+    ├── icon-192.png                 — 192×192 any maskable (placeholder violeta #863bff)
+    ├── icon-512.png                 — 512×512 any maskable (placeholder)
+    ├── shortcut-voice.png           — 96×96 shortcut Voz
+    ├── shortcut-config.png          — 96×96 shortcut Config
+    └── shortcut-audit.png           — 96×96 shortcut Audit
 
 supabase/
 ├── functions/
@@ -272,7 +282,8 @@ tests/
 │   ├── b2-auth-config.test.ts       — flows auth, config, logout (B2) ✅
 │   ├── b3-voice-screen.test.ts      — 8 tests VoiceScreen UI (B3) ✅
 │   ├── b45-voice-plan-flow.test.ts  — 5 tests E2E voice→plan-intent→PlanPreview (B4.5) ✅ 7299218
-│   └── b53-confirmation-flow.test.ts — 2 tests E2E confirm+cancel (B5) ✅ 3c3b926
+│   ├── b53-confirmation-flow.test.ts — 2 tests E2E confirm+cancel (B5) ✅ 3c3b926
+│   └── b7-pwa-shell.test.ts         — 2 tests E2E install banner + update banner (B7) ✅ d46a9c9
 ├── contracts/
 │   ├── plan-schema.test.ts          — Vitest schema Zod (B1) ✅
 │   ├── import-guard.test.ts         — guard no-imports cross-layer (B1) ✅
@@ -580,3 +591,4 @@ confiable entre sesiones.**
 | Wave 10 | ADR-014 formalizado (pivote de testing B5-B8 — cobertura mínima intencional, excepción B6). HANDOFF + CLAUDE.md + ADR-INDEX.md sincronizados. Baseline: 213 tests, commit `0e6bbfc`. Hotfix Wave 10: referencias de Wave y git log corregidas en HANDOFF §1, §3, §5, §15, §19. | 2026-05-03 | `d3d8c0a` |
 | Wave 11 | B5 cerrado: ConfirmationModal.svelte (step machine, timer 60s, doble confirmación), confirmation-utils.ts, execute-plan-client.ts (stub auditCancel), VoiceScreen integrado, 2 tests E2E (b53). Decisiones: confirmSettings lazy-load en callPlanIntent (evita deadlock IDB), localStore mockeado en b53, waitFor espera header+botón para evitar Cancelar ambiguo. Gates: 218/218 verde. | 2026-05-03 | `3c3b926` |
 | Wave 12 | B6 cerrado: executePlan() real + ExecutePlanClientError + 17 msgs ES, AuditView.svelte, redact-client.ts, VoiceScreen handleConfirmed() async, ruta `audit` en router/App. 2 tests integración skip (ADR-014, bloqueados sin Supabase). Mock b53 actualizado. Divergencia detectada: spec-pwa-shell §7 dice SW vanilla, tasks T7.2 dice Workbox — resolver al inicio B7. Gates: 220/220 verde + 2 skip. | 2026-05-03 | `496e848` |
+| Wave 13 | B7 cerrado: manifest canónico (spec §3.1), Workbox registerType:prompt, runtimeCaching NetworkOnly Gemini+Supabase, pwa.svelte.ts (PwaStore install/update), App.svelte banners, scripts/gen-icons.mjs (PNG sin deps), public/icons/ (5 PNG placeholder), src/__mocks__/pwa-register.ts + vitest.config.ts alias (fix virtual:pwa-register en Vitest), 2 tests E2E b7. T7.4/T7.5 N/A per spec §7+ADR-006. Decisión: Workbox > SW vanilla. Gates: 224/224 verde + 2 skip. | 2026-05-03 | `d46a9c9` |

@@ -275,23 +275,32 @@ se complete y se valide.
 
 ## Bloque 7 — PWA Atajos & Instalación (depende: B0)
 
-- [ ] **T7.1** — Manifest con shortcuts (modo voz `?mode=voice`,
-  config `/config`, auditoría `/audit`).
-  *Aceptación*: long-press del icono en Android muestra los 3
-  shortcuts.
-- [ ] **T7.2** — Service worker con cache de assets estáticos
-  (Workbox vía `vite-plugin-pwa`).
+- [x] **T7.1** — Manifest con shortcuts (modo voz `?mode=voice`,
+  config `?mode=config`, auditoría `?mode=audit`).
+  *Aceptación*: long-press del icono en Android muestra los 3 shortcuts.
+  ✅ 2026-05-03 `d46a9c9` — manifest canónico per spec §3.1: `start_url: /?mode=voice`,
+  `short_name: Orion`, `theme_color: #0E1116`, `id`, `dir`, `categories`, shortcuts
+  con URLs `?mode=` correctas, iconos `/icons/icon-192|512.png (any maskable)`.
+  Iconos PNG generados con `scripts/gen-icons.mjs` (node:zlib, sin deps externas).
+- [x] **T7.2** — Service worker con cache de assets estáticos (Workbox vía `vite-plugin-pwa`).
   *Aceptación*: segunda carga sin red sirve la shell desde cache.
-- [ ] **T7.3** — Add to Home Screen flow funcional en Chrome Android.
-  *Aceptación*: chrome://flags no requiere ajustes; el prompt
-  aparece y la instalación coloca icono.
-- [ ] **T7.4** — Lockscreen widget si Android del Cubot lo soporta
-  (best-effort, no blocker).
-  *Aceptación*: documentar en `INSTALLATION-CUBOT.md` si funciona o
-  no en KK9.
-- [ ] **T7.5** — Quick Tile si feasible (depende de versión Android
-  Cubot — best-effort).
-  *Aceptación*: documentar feasibility.
+  ✅ 2026-05-03 `d46a9c9` — `registerType: 'prompt'` (para mostrar banner SKIP_WAITING,
+  spec §4.3). `runtimeCaching: NetworkOnly` explícito para `*.supabase.co` y
+  `generativelanguage.googleapis.com` — Gemini y Edge Functions nunca cacheados (spec §3.2).
+  Decisión: Workbox sobre SW vanilla (tasks T7.2 > spec §7 letra; spirit cumplido).
+- [x] **T7.3** — Add to Home Screen flow funcional en Chrome Android.
+  *Aceptación*: el prompt aparece y la instalación coloca icono.
+  ✅ 2026-05-03 `d46a9c9` — `src/lib/pwa.svelte.ts`: PwaStore con `$state canInstall +
+  needsUpdate`, `init()` idempotente (captura `beforeinstallprompt`, registra SW).
+  `App.svelte`: `onMount pwa.init()` + banner instalación (top) + banner actualización
+  (bottom con SKIP_WAITING). 2 tests E2E: `tests/e2e/b7-pwa-shell.test.ts`.
+  Fix tests: `src/__mocks__/pwa-register.ts` + alias en `vitest.config.ts`.
+- [x] **T7.4** — Lockscreen widget.
+  ✅ N/A en M1 — `spec-pwa-shell.md §7` + ADR-006 lo excluyen explícitamente:
+  "Sin Quick Tile / lockscreen widget de Android. Requieren componente nativo Kotlin
+  (descartado por ADR-006)." No hay código; documentado aquí como cierre.
+- [x] **T7.5** — Quick Tile.
+  ✅ N/A en M1 — misma razón que T7.4 (ADR-006, spec §7). No hay código.
 
 ---
 

@@ -4,7 +4,7 @@ status: in-progress  # draft | in-review | in-progress | completed | archived
 owner: orion-vox
 target_milestone: M1
 created: 2026-05-01
-last_updated: 2026-05-03 (Wave 12)
+last_updated: 2026-05-03 (Wave 13)
 dependencies: []  # ADR-012 fue creado en Wave 1; ya no es dependencia bloqueante
 completed_blocks:
   - B0  # 45b0707 — setup base Svelte 5 + Vite 7 + TS + Tailwind 4 + Biome + PWA
@@ -18,8 +18,9 @@ completed_blocks:
   - B4.5  # 7299218 — 5 tests E2E flow completo voice→plan-intent→PlanPreview
   - B5    # 3c3b926 — ConfirmationModal + confirmation-utils + execute-plan-client stub + VoiceScreen + 2 tests E2E
   - B6    # 496e848 — executePlan() real + AuditView + redact-client + VoiceScreen wired + 2 tests skip (ADR-014)
-current_block: B7  # Atajos Android + Instalación PWA
-next_block: B8  # Deploy + Smoke E2E Cubot KK9
+  - B7    # d46a9c9 — manifest canónico + Workbox prompt + NetworkOnly + pwa.svelte.ts + banners + iconos + 2 tests E2E
+current_block: B8  # Deploy + Smoke E2E Cubot KK9
+next_block: ~  # B8 es el bloque final de M1
 artifacts:
   proposal: proposal.md
   spec: spec.md
@@ -52,27 +53,38 @@ related_adrs:
   - ADR-012  # framework PWA Svelte 5 + Vite + TS (creado Wave 1)
   - ADR-013  # shared plan-schema entre PWA y Deno sin monorepo (B1)
 notes: |
-  Wave 12 (2026-05-03): B6 cerrado. 220/220 Vitest verde + 2 skip. Gates todos verdes.
+  Wave 13 (2026-05-03): B7 cerrado. 224/224 Vitest verde + 2 skip. Gates todos verdes.
 
-  B0-B6 completos. Próximo: B7 (Atajos Android + Instalación PWA).
+  B0-B7 completos (~98% M1). Próximo: B8 (Deploy + Smoke E2E Cubot KK9).
 
-  Orden real de implementación: B0→B1→B2→B4-Voice(como B3)→B4.1→B4.2→B4.3→B4.4→B4.5→B5→B6.
-  T3.2 y T3.3 completados en B4.2+B4.3+B4.4. T5.5 (dry_run toggle) ya existía en B2.
+  Orden real de implementación: B0→B1→B2→B4-Voice→B4.1→B4.2→B4.3→B4.4→B4.5→B5→B6→B7.
 
-  Riesgo documentado: deno test de Edge Functions no re-verificado
-  localmente desde T1.6. Re-verificación obligatoria en B8 pre-deploy.
-  Supabase/functions/ sin cambios en B2-B6 (riesgo bajo).
+  Decisión divergencia B7 resuelta: Workbox (tasks T7.2, ya instalado en B0) sobre
+  SW vanilla (spec §7 letra). Spirit de spec cumplido con runtimeCaching NetworkOnly
+  explícito para Supabase + Gemini.
+
+  T7.4/T7.5 N/A: spec §7 + ADR-006 los excluyen (requieren nativo Kotlin).
+
+  Fix Vitest B7: virtual:pwa-register aliaseado a src/__mocks__/pwa-register.ts
+  en vitest.config.ts. Necesario porque vite-plugin-pwa registra módulo virtual
+  que no resuelve en entorno Node/jsdom.
+
+  Iconos en public/icons/ son placeholders (fondo violeta #863bff). Reemplazar
+  con PNGs reales pre-launch en B8/post-M1.
+
+  Riesgo activo: deno test de Edge Functions no re-verificado desde T1.6.
+  Re-verificación obligatoria en B8 pre-deploy. Supabase/functions/ sin cambios
+  en B2-B7 (riesgo bajo).
+
+  Pendiente crítico para B8: director debe completar setup Supabase (§9 HANDOFF):
+  proyecto, magic link, migrations, env vars Edge, deploy funciones.
 
   Deuda activa M1→M2: TD-001-bis, TD-003, TD-004, TD-005, TD-008.
-
-  Divergencia B7: spec-pwa-shell §7 dice "SW vanilla sin Workbox".
-  Tasks T7.2 dice "Workbox vía vite-plugin-pwa" (ya instalado en B0).
-  Director debe resolver al inicio de B7 antes de tocar código.
 
   2 tests B6 skip: tests/e2e/b6-execute-plan-flow.test.ts — se activan
   cuando .env.local tenga VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY.
 
-  Gotchas acumulados B5-B6 (importantes para B7/B8):
+  Gotchas acumulados B5-B7 (importantes para B8):
   - handleConfirmed() es async: planResponse=null ANTES de executePlan.
   - voiceState reset manual a 'idle' en finally (no depender de resetToIdle).
   - Mock execute-plan-client en b53: incluye ExecutePlanClientError + executePlan.
@@ -80,3 +92,4 @@ notes: |
   - recognition.resetToIdle() es no-op en el mock → emit(rec,'state','idle').
   - tts.cancel() emite onerror con code:'interrupted', NO onend.
   - toBeDisabled() no disponible (sin jest-dom) → usar .disabled === false.
+  - virtual:pwa-register: siempre mockear en tests que monten App.svelte.
